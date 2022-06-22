@@ -1,6 +1,6 @@
-using NMRHamiltonianSimulator
+using NMRHamiltonian
 using Test
 
-@testset "NMRHamiltonianSimulator.jl" begin
+@testset "NMRHamiltonian.jl" begin
     # Write your tests here.
 end

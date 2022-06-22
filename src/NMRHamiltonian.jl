@@ -1,4 +1,4 @@
-module NMRHamiltonianSimulator
+module NMRHamiltonian
 
 # Write your package code here.
 using Distributed, LinearAlgebra, FFTW, SharedArrays, OffsetArrays, Statistics

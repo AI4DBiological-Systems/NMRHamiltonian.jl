@@ -1,4 +1,4 @@
-name = "NMRHamiltonianSimulator"
+name = "NMRHamiltonian"
 uuid = "d73005cc-2eb2-45b3-9785-29d07aec07ac"
 authors = ["Roy <rwang013@uottawa.ca> and contributors"]
 version = "0.1.0"

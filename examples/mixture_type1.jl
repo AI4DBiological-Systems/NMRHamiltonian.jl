@@ -1,5 +1,5 @@
-include("../src/NMRHamiltonianSimulator.jl")
-import .NMRHamiltonianSimulator
+include("../src/NMRHamiltonian.jl")
+import .NMRHamiltonian
 
 using LinearAlgebra
 using FFTW
@@ -56,14 +56,14 @@ hz2ppmfunc = uu->(uu - ν_0ppm)*SW/fs
 ppm2hzfunc = pp->(ν_0ppm + pp*fs/SW)
 
 println("Timing: mag equivalence")
-@time MEs = NMRHamiltonianSimulator.getmageqinfomixture(molecule_names,
+@time MEs = NMRHamiltonian.getmageqinfomixture(molecule_names,
     H_params_path,
     dict_compound_to_filename;
     unique_cs_atol = 1e-6)
 
 #
 println("Timing: setupmixtureproxies()")
-@time mixture_params = NMRHamiltonianSimulator.setupmixtureSH(molecule_names,
+@time mixture_params = NMRHamiltonian.setupmixtureSH(molecule_names,
     H_params_path, dict_compound_to_filename, fs, SW,
     ν_0ppm;
     MEs = MEs,
