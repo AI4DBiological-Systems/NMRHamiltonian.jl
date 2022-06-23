@@ -1,5 +1,67 @@
 
 
+function allabssmaller(x, threshold)
+    if maximum(abs.(x)) > threshold
+        return false
+    end
+
+    return true
+end
+
+function sumabssmaller(x, threshold)
+    if sum(abs.(x)) > threshold
+        return false
+    end
+
+    return true
+end
+
+function prunecombocoherences!(A, α_tol, tol_coherence, Δc_partition_radius)
+
+    for i = 1:length(A.Δc_m_compound)
+
+        keep_flags = collect( allabssmaller(A.Δc_m_compound[i][l],1+tol_coherence) for l = 1:length(A.Δc_m_compound[i]) )
+        #keep_flags = collect( sumabssmaller(A.Δc_m_compound[i][l],1+tol_coherence) for l = 1:length(A.Δc_m_compound[i]) )
+
+        A.αs[i] = A.αs[i][keep_flags]
+        A.Ωs[i] = A.Ωs[i][keep_flags]
+        A.Δc_m_compound[i] = A.Δc_m_compound[i][keep_flags]
+
+        # remake Δc_bar.
+        part_inds, Δc_centroids = partitionresonancesbyneighbors(A.Δc_m_compound[i],
+            A.αs[i], α_tol; radius = Δc_partition_radius)
+
+        A.Δc_bar[i] = Δc_centroids
+        A.part_inds_compound[i] = part_inds
+    end
+
+    return nothing
+end
+
+function prunecombocoherencesbar!(A, α_tol, tol_coherence, Δc_partition_radius)
+
+    for i = 1:length(A.Δc_m_compound)
+
+        keep_flags = collect( allabssmaller(A.Δc_m_compound[i][l],1+tol_coherence) for l = 1:length(A.Δc_m_compound[i]) )
+        #keep_flags = collect( sumabssmaller(A.Δc_m_compound[i][l],1+tol_coherence) for l = 1:length(A.Δc_m_compound[i]) )
+
+        A.αs[i] = A.αs[i][keep_flags]
+        A.Ωs[i] = A.Ωs[i][keep_flags]
+        A.Δc_m_compound[i] = A.Δc_m_compound[i][keep_flags]
+
+        # remake Δc_bar.
+        part_inds, Δc_centroids = partitionresonancesbyneighbors(A.Δc_m_compound[i],
+            A.αs[i], α_tol; radius = Δc_partition_radius)
+
+        #
+        keep_flags = collect( sumabssmaller(Δc_centroids[l],1+tol_coherence) for l = 1:length(Δc_centroids) )
+
+        A.Δc_bar[i] = Δc_centroids[keep_flags]
+        A.part_inds_compound[i] = part_inds[keep_flags]
+    end
+
+    return nothing
+end
 
 #####
 """
@@ -173,7 +235,8 @@ function setupmixtureSH(target_names::Vector{String},
     tol_coherence = 1e-2,
     α_relative_threshold = 0.05,
     Δc_partition_radius = 1e-1,
-    simple_coherence_atol::T = -1.2) where {T <: Real, SST}
+    simple_coherence_atol::T = -1.2,
+    prune_combo_Δc_bar_flag::Bool = true) where {T <: Real, SST}
 
     ppm2hzfunc = pp->(ν_0ppm + pp*fs/SW)
 
@@ -200,6 +263,14 @@ function setupmixtureSH(target_names::Vector{String},
 
         As[n] = SHType(αs, Ωs, Δc_m_compound, part_inds_compound,
             Δc_bar, N_spins_sys, αs_singlets, Ωs_singlets, fs, SW, ν_0ppm)
+
+        if prune_combo_Δc_bar_flag
+
+            # The following pruning strategy gave dubious spectra shape for L-Leucine.
+            #prunecombocoherences!(As[1], α_relative_threshold, tol_coherence, Δc_partition_radius)
+
+            prunecombocoherencesbar!(As[n], α_relative_threshold, tol_coherence, Δc_partition_radius)
+        end
     end
 
     return As
