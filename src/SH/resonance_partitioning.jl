@@ -63,6 +63,33 @@ function prunecombocoherencesbar!(A, α_tol, tol_coherence, Δc_partition_radius
     return nothing
 end
 
+function prunecombocoherencesbar2!(Δc_m_compound,
+    αs, Ωs, Δc_bar, part_inds_compound;
+    α_tol = 0.05, tol_coherence = 1e-2, Δc_partition_radius = 0.3)
+
+    for i = 1:length(Δc_m_compound)
+
+        keep_flags = collect( allabssmaller(Δc_m_compound[i][l],1+tol_coherence) for l = 1:length(Δc_m_compound[i]) )
+        #keep_flags = collect( sumabssmaller(A.Δc_m_compound[i][l],1+tol_coherence) for l = 1:length(A.Δc_m_compound[i]) )
+
+        αs[i] = αs[i][keep_flags]
+        Ωs[i] = Ωs[i][keep_flags]
+        Δc_m_compound[i] = Δc_m_compound[i][keep_flags]
+
+        # remake Δc_bar.
+        part_inds, Δc_centroids = partitionresonancesbyneighbors(Δc_m_compound[i],
+            αs[i], α_tol; radius = Δc_partition_radius)
+
+        #
+        keep_flags = collect( sumabssmaller(Δc_centroids[l],1+tol_coherence) for l = 1:length(Δc_centroids) )
+
+        Δc_bar[i] = Δc_centroids[keep_flags]
+        part_inds_compound[i] = part_inds[keep_flags]
+    end
+
+    return nothing
+end
+
 #####
 """
 Uses the NearestNeighbors.jl search library to determine which resonances should be grouped together.
@@ -259,18 +286,11 @@ function setupmixtureSH(target_names::Vector{String},
             tol_coherence = tol_coherence,
             α_relative_threshold = α_relative_threshold,
             Δc_partition_radius = Δc_partition_radius,
-            simple_coherence_atol = simple_coherence_atol)
+            simple_coherence_atol = simple_coherence_atol,
+            prune_combo_Δc_bar_flag = prune_combo_Δc_bar_flag)
 
         As[n] = SHType(αs, Ωs, Δc_m_compound, part_inds_compound,
             Δc_bar, N_spins_sys, αs_singlets, Ωs_singlets, fs, SW, ν_0ppm)
-
-        if prune_combo_Δc_bar_flag
-
-            # The following pruning strategy gave dubious spectra shape for L-Leucine.
-            #prunecombocoherences!(As[1], α_relative_threshold, tol_coherence, Δc_partition_radius)
-
-            prunecombocoherencesbar!(As[n], α_relative_threshold, tol_coherence, Δc_partition_radius)
-        end
     end
 
     return As
@@ -287,7 +307,8 @@ function setupcompoundSH(name, base_path, dict_compound_to_filename,
     tol_coherence = 1e-2,
     α_relative_threshold = 0.05,
     Δc_partition_radius = 1e-1,
-    simple_coherence_atol::T = -1.2) where T <: Real
+    simple_coherence_atol::T = -1.2,
+    prune_combo_Δc_bar_flag = true) where T <: Real
 
     # TODO add error-handling if name is not found in the dictionary, or filename does not exist.
     load_path = joinpath(base_path, dict_compound_to_filename[name]["file name"])
@@ -356,6 +377,17 @@ function setupcompoundSH(name, base_path, dict_compound_to_filename,
 
     # f = uu->evalcLcompoundviapartitions(uu, d,
     # αs, Ωs, κs_λ, κs_β, λ0, Δc_m_compound, part_inds_compound)
+
+    if prune_combo_Δc_bar_flag
+
+        # The following pruning strategy gave dubious spectra shape for L-Leucine.
+        #prunecombocoherences!(As[1], α_relative_threshold, tol_coherence, Δc_partition_radius)
+
+        #prunecombocoherencesbar!(As[n], α_relative_threshold, tol_coherence, Δc_partition_radius)
+        prunecombocoherencesbar2!(Δc_m_compound,
+            αs, Ωs, Δc_bar, part_inds_compound;
+            α_tol = α_tol, tol_coherence = tol_coherence, Δc_partition_radius = Δc_partition_radius)
+    end
 
     return αs, Ωs, part_inds_compound, Δc_m_compound, Δc_bar, N_spins_sys,
     αs_singlets, Ωs_singlets
