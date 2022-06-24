@@ -386,7 +386,7 @@ function setupcompoundSH(name, base_path, dict_compound_to_filename,
         #prunecombocoherencesbar!(As[n], α_relative_threshold, tol_coherence, Δc_partition_radius)
         prunecombocoherencesbar2!(Δc_m_compound,
             αs, Ωs, Δc_bar, part_inds_compound;
-            α_tol = α_tol, tol_coherence = tol_coherence, Δc_partition_radius = Δc_partition_radius)
+            α_tol = α_relative_threshold, tol_coherence = tol_coherence, Δc_partition_radius = Δc_partition_radius)
     end
 
     return αs, Ωs, part_inds_compound, Δc_m_compound, Δc_bar, N_spins_sys,
