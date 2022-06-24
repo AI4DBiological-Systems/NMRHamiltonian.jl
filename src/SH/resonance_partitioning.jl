@@ -16,7 +16,7 @@ function sumabssmaller(x, threshold)
     return true
 end
 
-function prunecombocoherences!(A, α_tol, tol_coherence, Δc_partition_radius)
+function prunecombocoherences!(A, α_relative_threshold, tol_coherence, Δc_partition_radius)
 
     for i = 1:length(A.Δc_m_compound)
 
@@ -28,6 +28,7 @@ function prunecombocoherences!(A, α_tol, tol_coherence, Δc_partition_radius)
         A.Δc_m_compound[i] = A.Δc_m_compound[i][keep_flags]
 
         # remake Δc_bar.
+        α_tol = α_relative_threshold*maximum(A.αs[i])
         part_inds, Δc_centroids = partitionresonancesbyneighbors(A.Δc_m_compound[i],
             A.αs[i], α_tol; radius = Δc_partition_radius)
 
@@ -38,7 +39,7 @@ function prunecombocoherences!(A, α_tol, tol_coherence, Δc_partition_radius)
     return nothing
 end
 
-function prunecombocoherencesbar!(A, α_tol, tol_coherence, Δc_partition_radius)
+function prunecombocoherencesbar!(A, α_relative_threshold, tol_coherence, Δc_partition_radius)
 
     for i = 1:length(A.Δc_m_compound)
 
@@ -50,6 +51,7 @@ function prunecombocoherencesbar!(A, α_tol, tol_coherence, Δc_partition_radius
         A.Δc_m_compound[i] = A.Δc_m_compound[i][keep_flags]
 
         # remake Δc_bar.
+        α_tol = α_relative_threshold*maximum(A.αs[i])
         part_inds, Δc_centroids = partitionresonancesbyneighbors(A.Δc_m_compound[i],
             A.αs[i], α_tol; radius = Δc_partition_radius)
 
@@ -65,7 +67,7 @@ end
 
 function prunecombocoherencesbar2!(Δc_m_compound,
     αs, Ωs, Δc_bar, part_inds_compound;
-    α_tol = 0.05, tol_coherence = 1e-2, Δc_partition_radius = 0.3)
+    α_relative_threshold = 0.05, tol_coherence = 1e-2, Δc_partition_radius = 0.3)
 
     for i = 1:length(Δc_m_compound)
 
@@ -77,6 +79,7 @@ function prunecombocoherencesbar2!(Δc_m_compound,
         Δc_m_compound[i] = Δc_m_compound[i][keep_flags]
 
         # remake Δc_bar.
+        α_tol = α_relative_threshold*maximum(αs[i])
         part_inds, Δc_centroids = partitionresonancesbyneighbors(Δc_m_compound[i],
             αs[i], α_tol; radius = Δc_partition_radius)
 
@@ -386,7 +389,7 @@ function setupcompoundSH(name, base_path, dict_compound_to_filename,
         #prunecombocoherencesbar!(As[n], α_relative_threshold, tol_coherence, Δc_partition_radius)
         prunecombocoherencesbar2!(Δc_m_compound,
             αs, Ωs, Δc_bar, part_inds_compound;
-            α_tol = α_relative_threshold, tol_coherence = tol_coherence, Δc_partition_radius = Δc_partition_radius)
+            α_relative_threshold = α_relative_threshold, tol_coherence = tol_coherence, Δc_partition_radius = Δc_partition_radius)
     end
 
     return αs, Ωs, part_inds_compound, Δc_m_compound, Δc_bar, N_spins_sys,
