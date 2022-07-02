@@ -257,10 +257,8 @@ end
 
 
 function setupmixtureSH(target_names::Vector{String},
-    H_params_path::String,
-    dict_compound_to_filename,
-    fs::T, SW::T, ν_0ppm::T;
-    MEs::Vector{Vector{Vector{Vector{Int}}}} = Vector{Vector{Vector{Vector{Int}}}}(undef, 0),
+    fs::T, SW::T, ν_0ppm::T,
+    Phys::Vector{PhysicalParamsType{T}};
     config_path = "",
     tol_coherence = 1e-2,
     α_relative_threshold = 0.05,
@@ -275,17 +273,22 @@ function setupmixtureSH(target_names::Vector{String},
 
     for n = 1:N_compounds
 
-        ME = Vector{Vector{Vector{Int}}}(undef, 0)
-        if !isempty(MEs)
-            ME = MEs[n]
-        end
+        # ME = Vector{Vector{Vector{Int}}}(undef, 0)
+        # if !isempty(MEs)
+        #     ME = MEs[n]
+        # end
 
         αs, Ωs, part_inds_compound, Δc_m_compound, Δc_bar, N_spins_sys,
             αs_singlets, Ωs_singlets = setupcompoundSH(target_names[n],
-            H_params_path, dict_compound_to_filename, ppm2hzfunc,
+            Phys[n].J_inds_sys_local,
+            Phys[n].J_vals_sys,
+            Phys[n].cs_sys,
+            Phys[n].H_inds_singlets,
+            Phys[n].cs_singlets,
+            ppm2hzfunc,
             fs, SW, ν_0ppm;
             config_path = config_path,
-            ME = ME,
+            ME = Phys[n].ME,
             tol_coherence = tol_coherence,
             α_relative_threshold = α_relative_threshold,
             Δc_partition_radius = Δc_partition_radius,
@@ -302,7 +305,12 @@ end
 
 
 
-function setupcompoundSH(name, base_path, dict_compound_to_filename,
+function setupcompoundSH(name,
+    J_inds_sys_local,
+    J_vals_sys,
+    cs_sys,
+    H_inds_singlets,
+    cs_singlets,
     ppm2hzfunc,
     fs::T, SW::T, ν_0ppm::T;
     ME::Vector{Vector{Vector{Int}}} = Vector{Vector{Vector{Int}}}(undef, 0),
@@ -312,10 +320,6 @@ function setupcompoundSH(name, base_path, dict_compound_to_filename,
     Δc_partition_radius = 1e-1,
     simple_coherence_atol::T = -1.2,
     prune_combo_Δc_bar_flag = true) where T <: Real
-
-    # TODO add error-handling if name is not found in the dictionary, or filename does not exist.
-    load_path = joinpath(base_path, dict_compound_to_filename[name]["file name"])
-    H_IDs, H_css, J_IDs, J_vals = loadcouplinginfojson(load_path)
 
     if ispath(config_path)
 
@@ -330,13 +334,14 @@ function setupcompoundSH(name, base_path, dict_compound_to_filename,
     end
 
 
-    # SH.
-    # p_cs_sys, css_sys, cs_singlets, J_vals_sys, J_IDs_sys, intermediates_sys,
-    # cs_LUT, cs_singlets_compact, N_spins_singlet, css, p_compound,
-    # cs_compound = fetchSHparameters(H_IDs, H_css, J_IDs, J_vals)
-    J_inds_sys, J_inds_sys_local, J_IDs_sys, J_vals_sys, H_inds_sys,
-        cs_sys, H_inds_singlets, cs_singlets, H_inds, J_inds,
-        g = setupcsJ(H_IDs, H_css, J_IDs, J_vals)
+    ### SH.
+    # #TODO add error-handling if name is not found in the dictionary, or filename does not exist.
+    # load_path = joinpath(base_path, dict_compound_to_filename[name]["file name"])
+    # H_IDs, H_css, J_IDs, J_vals = loadcouplinginfojson(load_path)
+
+    # J_inds_sys, J_inds_sys_local, J_IDs_sys, J_vals_sys, H_inds_sys,
+    #     cs_sys, H_inds_singlets, cs_singlets, H_inds, J_inds,
+    #     g = setupcsJ(H_IDs, H_css, J_IDs, J_vals)
 
     N_spins_singlet = length.(H_inds_singlets)
 
