@@ -132,3 +132,96 @@ function getPsnospininfo(As, hz2ppmfunc)
 
     return ΩS_ppm
 end
+
+function array2matrix(X::Array{Vector{T},L})::Matrix{T} where {T,L}
+
+    N = length(X)
+    D = length(X[1])
+
+    out = Matrix{T}(undef,D,N)
+    for n = 1:N
+        out[:,n] = X[n]
+    end
+
+    return out
+end
+
+
+
+##### for investigating prune combination coherences.
+function allabssmaller(x, threshold)
+    if maximum(abs.(x)) > threshold
+        return false
+    end
+
+    return true
+end
+
+function sumabssmaller(x, threshold)
+    if sum(abs.(x)) > threshold
+        return false
+    end
+
+    return true
+end
+
+###### for evaluating resonance groups and singlets.
+function evalzerophaseclpartitionelement(r,
+    α::T, Ω::T, λ::T)::Complex{T} where T <: Real
+
+    out = α/(λ+im*(r-Ω))
+
+    return out
+end
+
+function evalzerophaseclresonancegroup(u_rad, A,
+    i::Int, k::Int, λ::T)::Complex{T} where T <: Real
+
+    out = zero(Complex{T})
+    for l in A.part_inds_compound[i][k]
+        out += evalzerophaseclpartitionelement(u_rad, A.αs[i][l], A.Ωs[i][l], λ)
+    end
+
+    return out
+end
+
+function evalzerophaseclsinglets(u_rad, A, λ::T)::Complex{T} where T <: Real
+
+    out = zero(Complex{T})
+    for i = 1:length(A.Ωs_singlets)
+        out += evalzerophaseclpartitionelement(u_rad, A.αs_singlets[i], A.Ωs_singlets[i], λ)
+    end
+
+    return out
+end
+
+function evalzerophaseclmixture(u_rad, As, λ::T)::Complex{T} where T <: Real
+
+    out = zero(Complex{T})
+    for n = 1:length(As)
+        for i = 1:length(As[n].part_inds_compound)
+            for k = 1:length(As[n].part_inds_compound[i])
+
+                out += evalzerophaseclresonancegroup(u_rad, As[n], i, k, λ)
+            end
+        end
+
+        out += evalzerophaseclsinglets(u_rad, As[n], λ)
+    end
+
+    return out
+end
+
+function getqs(A, λ::T) where T <: Real
+    #
+    N_sys = length(A.part_inds_compound)
+
+    qs = Vector{Vector{Function}}(undef, N_sys)
+    for i = 1:N_sys
+
+        N_groups = length(A.part_inds_compound[i])
+        qs[i] = collect( uu->evalzerophaseclresonancegroup(uu, A, i, k, λ) for k = 1:N_groups)
+    end
+
+    return qs
+end

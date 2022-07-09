@@ -72,11 +72,11 @@ function prunecombocoherencesbar2!(Δc_m_compound,
     for i = 1:length(Δc_m_compound)
 
         keep_flags = collect( allabssmaller(Δc_m_compound[i][l],1+tol_coherence) for l = 1:length(Δc_m_compound[i]) )
-        #keep_flags = collect( sumabssmaller(A.Δc_m_compound[i][l],1+tol_coherence) for l = 1:length(A.Δc_m_compound[i]) )
 
         αs[i] = αs[i][keep_flags]
         Ωs[i] = Ωs[i][keep_flags]
         Δc_m_compound[i] = Δc_m_compound[i][keep_flags]
+        #println("1 count(keep_flags) = ", count(keep_flags) )
 
         # remake Δc_bar.
         α_tol = α_relative_threshold*maximum(αs[i])
@@ -85,6 +85,7 @@ function prunecombocoherencesbar2!(Δc_m_compound,
 
         #
         keep_flags = collect( sumabssmaller(Δc_centroids[l],1+tol_coherence) for l = 1:length(Δc_centroids) )
+        #println("2 count(keep_flags) = ", count(keep_flags) )
 
         Δc_bar[i] = Δc_centroids[keep_flags]
         part_inds_compound[i] = part_inds[keep_flags]
@@ -156,7 +157,8 @@ function partitionresonances(coherence_state_pairs_sys, ms_sys,
     α_relative_threshold = 0.05,
     Δc_partition_radius = 1e-1,
     ME::Vector{Vector{Vector{Int}}} = Vector{Vector{Vector{Int}}}(undef, 0),
-    simple_coherence_atol::T = -1.2) where T
+    simple_coherence_atol::T = 1e-2,
+    prune_combo_Δc_flag = true) where T
 
     N_groups = length(αs)
 
@@ -186,6 +188,27 @@ function partitionresonances(coherence_state_pairs_sys, ms_sys,
         c_m_s = collect( ms_sys[i][s] for (r,s) in c_states_prune )
         Δc_m = collect( c_m_r[j] - c_m_s[j] for j = 1:length(c_m_r))
 
+        if prune_combo_Δc_flag
+
+            ϵ = simple_coherence_atol # easier to read.
+
+
+            keep_flags = collect( allabssmaller(Δc_m[l], 1 + ϵ) for l = 1:length(Δc_m) )
+            # println("Δc_m[1]]= ", Δc_m[1])
+            # println("1+simple_coherence_atol = ", 1+simple_coherence_atol)
+            # println("keep_flags[1] = ", keep_flags[1])
+            αs_i_prune = αs_i_prune[keep_flags]
+            Ωs_i_prune = Ωs_i_prune[keep_flags]
+            Δc_m = Δc_m[keep_flags]
+
+            # need a bit more tolerance for the sum filter, otherwise might filter too many components.
+            N_DOF = length(Δc_m[1])
+            keep_flags = collect( sumabssmaller(Δc_m[l], 1 + ϵ*N_DOF ) for l = 1:length(Δc_m) )
+            αs_i_prune = αs_i_prune[keep_flags]
+            Ωs_i_prune = Ωs_i_prune[keep_flags]
+            Δc_m = Δc_m[keep_flags]
+        end
+
         # println("Δc_m = ", Δc_m)
         # println("ME[i] = ", ME[i])
         # println("N_spins_sys[i] = ", N_spins_sys[i])
@@ -206,10 +229,12 @@ function partitionresonances(coherence_state_pairs_sys, ms_sys,
         #     Δc_m = Δc_m[inds]
         # end
 
-        part_inds, Δc_centroids = partitionresonancesbyneighbors(Δc_m,
-            αs_i_prune, α_tol; radius = Δc_partition_radius)
-
-
+        part_inds = Vector{Vector{Int}}(undef, 0)
+        Δc_centroids = Vector{Vector{T}}(undef, 0)
+        if !isempty(Δc_m)
+            part_inds, Δc_centroids = partitionresonancesbyneighbors(Δc_m,
+                αs_i_prune, α_tol; radius = Δc_partition_radius)
+        end
 
         # partition_size = length(part_inds)
         # as[i] = Vector{Vector{T}}(undef, partition_size)
@@ -263,8 +288,8 @@ function setupmixtureSH(target_names::Vector{String},
     tol_coherence = 1e-2,
     α_relative_threshold = 0.05,
     Δc_partition_radius = 1e-1,
-    simple_coherence_atol::T = -1.2,
-    prune_combo_Δc_bar_flag::Bool = true) where {T <: Real, SST}
+    simple_coherence_atol::T = 1e-2,
+    prune_combo_Δc_flag::Bool = true) where {T <: Real, SST}
 
     ppm2hzfunc = pp->(ν_0ppm + pp*fs/SW)
 
@@ -293,7 +318,7 @@ function setupmixtureSH(target_names::Vector{String},
             α_relative_threshold = α_relative_threshold,
             Δc_partition_radius = Δc_partition_radius,
             simple_coherence_atol = simple_coherence_atol,
-            prune_combo_Δc_bar_flag = prune_combo_Δc_bar_flag)
+            prune_combo_Δc_flag = prune_combo_Δc_flag)
 
         As[n] = SHType(αs, Ωs, Δc_m_compound, part_inds_compound,
             Δc_bar, N_spins_sys, αs_singlets, Ωs_singlets, fs, SW, ν_0ppm)
@@ -318,8 +343,8 @@ function setupcompoundSH(name,
     tol_coherence = 1e-2,
     α_relative_threshold = 0.05,
     Δc_partition_radius = 1e-1,
-    simple_coherence_atol::T = -1.2,
-    prune_combo_Δc_bar_flag = true) where T <: Real
+    simple_coherence_atol::T = 1e-2,
+    prune_combo_Δc_flag = true) where T <: Real
 
     if ispath(config_path)
 
@@ -381,21 +406,23 @@ function setupcompoundSH(name,
     ME = ME,
     α_relative_threshold = α_relative_threshold,
     Δc_partition_radius = Δc_partition_radius,
-    simple_coherence_atol = simple_coherence_atol)
+    simple_coherence_atol = simple_coherence_atol,
+    prune_combo_Δc_flag = prune_combo_Δc_flag)
 
     # f = uu->evalcLcompoundviapartitions(uu, d,
     # αs, Ωs, κs_λ, κs_β, λ0, Δc_m_compound, part_inds_compound)
 
-    if prune_combo_Δc_bar_flag
+    # if prune_combo_Δc_flag
 
-        # The following pruning strategy gave dubious spectra shape for L-Leucine.
-        #prunecombocoherences!(As[1], α_relative_threshold, tol_coherence, Δc_partition_radius)
+    #     # The following pruning strategy gave dubious spectra shape for L-Leucine.
+    #     #prunecombocoherences!(As[1], α_relative_threshold, tol_coherence, Δc_partition_radius)
 
-        #prunecombocoherencesbar!(As[n], α_relative_threshold, tol_coherence, Δc_partition_radius)
-        prunecombocoherencesbar2!(Δc_m_compound,
-            αs, Ωs, Δc_bar, part_inds_compound;
-            α_relative_threshold = α_relative_threshold, tol_coherence = tol_coherence, Δc_partition_radius = Δc_partition_radius)
-    end
+    #     #prunecombocoherencesbar!(As[n], α_relative_threshold, tol_coherence, Δc_partition_radius)
+
+    #     prunecombocoherencesbar2!(Δc_m_compound,
+    #         αs, Ωs, Δc_bar, part_inds_compound;
+    #         α_relative_threshold = α_relative_threshold, tol_coherence = tol_coherence, Δc_partition_radius = Δc_partition_radius)
+    # end
 
     return αs, Ωs, part_inds_compound, Δc_m_compound, Δc_bar, N_spins_sys,
     αs_singlets, Ωs_singlets
