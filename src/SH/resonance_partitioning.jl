@@ -188,15 +188,27 @@ function partitionresonances(coherence_state_pairs_sys, ms_sys,
         c_m_s = collect( ms_sys[i][s] for (r,s) in c_states_prune )
         Δc_m = collect( c_m_r[j] - c_m_s[j] for j = 1:length(c_m_r))
 
+        ## reduce the cardinality of Δc_m if there is magnetic equivalence in this spin system.
+        # println("Δc_m = ", Δc_m)
+        # println("ME[i] = ", ME[i])
+        # println("N_spins_sys[i] = ", N_spins_sys[i])
+        if !isempty(ME)
+            if !isempty(ME[i])
+                Δc_m = reduceΔc(Δc_m, ME[i], N_spins_sys[i])
+            end
+        end
+
+        ## remove components that don't have the "near simple coherence" criteria.
+        #println("Δc_m = ", Δc_m) # debug.
         if prune_combo_Δc_flag
 
             ϵ = simple_coherence_atol # easier to read.
 
 
             keep_flags = collect( allabssmaller(Δc_m[l], 1 + ϵ) for l = 1:length(Δc_m) )
-            # println("Δc_m[1]]= ", Δc_m[1])
-            # println("1+simple_coherence_atol = ", 1+simple_coherence_atol)
-            # println("keep_flags[1] = ", keep_flags[1])
+            # println("Δc_m[1]]= ", Δc_m[1]) # debug.
+            # println("1+simple_coherence_atol = ", 1+simple_coherence_atol) # debug.
+            # println("keep_flags[1] = ", keep_flags[1]) # debug.
             αs_i_prune = αs_i_prune[keep_flags]
             Ωs_i_prune = Ωs_i_prune[keep_flags]
             Δc_m = Δc_m[keep_flags]
@@ -208,26 +220,7 @@ function partitionresonances(coherence_state_pairs_sys, ms_sys,
             Ωs_i_prune = Ωs_i_prune[keep_flags]
             Δc_m = Δc_m[keep_flags]
         end
-
-        # println("Δc_m = ", Δc_m)
-        # println("ME[i] = ", ME[i])
-        # println("N_spins_sys[i] = ", N_spins_sys[i])
-        if !isempty(ME)
-            if !isempty(ME[i])
-                Δc_m = reduceΔc(Δc_m, ME[i], N_spins_sys[i])
-            end
-        end
-
-
-        # # check if we should discard the non-simple coherences.
-        # if simple_coherence_atol > 0
-        #
-        #     inds = findsimplecoherences(Δc_m, atol = simple_coherence_atol)
-        #
-        #     αs_i_prune = αs_i_prune[inds]
-        #     Ωs_i_prune = Ωs_i_prune[inds]
-        #     Δc_m = Δc_m[inds]
-        # end
+        #println("Δc_m = ", Δc_m) # debug.
 
         part_inds = Vector{Vector{Int}}(undef, 0)
         Δc_centroids = Vector{Vector{T}}(undef, 0)
@@ -236,14 +229,6 @@ function partitionresonances(coherence_state_pairs_sys, ms_sys,
                 αs_i_prune, α_tol; radius = Δc_partition_radius)
         end
 
-        # partition_size = length(part_inds)
-        # as[i] = Vector{Vector{T}}(undef, partition_size)
-        # Fs[i] = Vector{Vector{T}}(undef, partition_size)
-        # for m = 1:partition_size
-        #
-        #     as[i][m] = αs_i_prune[part_inds[m]]
-        #     Fs[i][m] = Ωs_i_prune[part_inds[m]]
-        # end
         as[i] = αs_i_prune
         Fs[i] = Ωs_i_prune
 

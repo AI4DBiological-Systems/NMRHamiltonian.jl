@@ -1,5 +1,5 @@
 
-include("/home/roy/Documents/repo/NMRHamiltonian.jl/src/NMRHamiltonian.jl")
+include("../src/NMRHamiltonian.jl")
 import .NMRHamiltonian
 #import NMRHamiltonian
 import NMRSignalSimulator
@@ -38,8 +38,9 @@ SH_config_path = "/home/roy/Documents/repo/NMRData/input/SH_configs/select_compo
 #SH_config_path = "/home/roy/Documents/repo/NMRData/input/SH_configs/select_compounds_SH_configs_low_intensity_threshold.json"
 surrogate_config_path = "/home/roy/Documents/repo/NMRData/input/surrogate_configs/select_compounds_SH_configs.json"
 
-molecule_names = ["alpha-D-Glucose"; ];
+#molecule_names = ["alpha-D-Glucose"; ]
 #molecule_names = ["beta-D-Glucose"; ];
+molecule_names = ["Ethanol"; ];
 
 prune_combo_Δc_flag = true
 #prune_combo_Δc_flag = false
@@ -49,8 +50,8 @@ simple_coherence_atol = 1e-2
 #fs, SW, ν_0ppm = fetchsamplemachinesettings("400")
 #fs, SW, ν_0ppm = fetchsamplemachinesettings("500")
 #fs, SW, ν_0ppm = fetchsamplemachinesettings("600")
-fs, SW, ν_0ppm = fetchsamplemachinesettings("700")
-#fs, SW, ν_0ppm = fetchsamplemachinesettings("900")
+#fs, SW, ν_0ppm = fetchsamplemachinesettings("700")
+fs, SW, ν_0ppm = fetchsamplemachinesettings("900")
 
 # path to the json file that provides the mapping from a compound name to its spin system info file name.
 H_params_path = "/home/roy/Documents/repo/NMRData/input/coupling_info"
@@ -87,7 +88,7 @@ As = mixture_params
 
 ### plot.
 # This is the frequency range that we shall work with.
-P = LinRange(3, 4, 50000)
+P = LinRange(-0.5, 4, 50000)
 U = ppm2hzfunc.(P)
 U_rad = U .* (2*π)
 
@@ -126,7 +127,7 @@ qs = getqs(A, λ0)
 spectrometer_freq = round(fs/SW, digits = 2)
 
 using Plots; plotly()
-plots_save_path = "/home/roy/Documents/workspaces/WIP/debug/mod_$(spectrometer_freq)-$(prune_combo_Δc_flag).html"
+plots_save_path = "/home/roy/Documents/workspaces/WIP/debug/$(molecule_names[1])_$(spectrometer_freq)-$(prune_combo_Δc_flag).html"
 
 
 title_string = "$(spectrometer_freq)-$(prune_combo_Δc_flag)"
@@ -142,8 +143,11 @@ display(plot_obj)
 S = collect( sum(A.Δc_bar[1][k]) for k = 1:length(A.Δc_bar[1]) )
 F = collect( NMRHamiltonian.allabssmaller(A.Δc_bar[1][k], 1+1e-2) for k = 1:length(A.Δc_bar[1]) )
 
-cb = A.Δc_bar[1]
-M = array2matrix(cb)
+c = deepcopy(A.Δc_m_compound)
+cb = deepcopy(A.Δc_bar)
+
+i = 1
+M = array2matrix(cb[i])
 M = [collect(1:size(M,2))'; M]
-println("$(spectrometer_freq) MHz, Δc_bar (rows 2 to end)")
+println("$(spectrometer_freq) MHz, Δc_bar[$(i)] (rows 2 to end)")
 display(M)
