@@ -1,3 +1,15 @@
+
+###### l-infinite norm as a distance metric for NearestNeighbors.jl.
+function evalmaxnorm(x, y)
+    return maximum(abs.(x-y))
+end
+
+# Declare the metric
+struct MaxNormMetric <: NearestNeighbors.Metric end
+(::MaxNormMetric)(x,y) = evalmaxnorm(x,y)
+
+######
+
 struct SHType{T} # output of the SH simulation.
 
     # resonance components in non-singlet spin systems.

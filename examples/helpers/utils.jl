@@ -1,3 +1,58 @@
+
+function plotabsorptionlorentzians(a::Vector{T}, F::Vector{T}, λ0::T,
+    fs::T, SW::T, ν_0ppm::T, fig_num;
+    P_min = Inf,
+    P_max = Inf,
+    a_ref::Vector{T} = Vector{T}(undef, 0), # reference spectrum.
+    F_ref::Vector{T} = Vector{T}(undef, 0), # reference spectrum.
+    u_offset = 0.2, #in units ppm
+    N_viz = 50000,
+    title_string = "spectrum") where T
+
+    hz2ppmfunc = uu->(uu - ν_0ppm)*SW/fs
+    ppm2hzfunc = pp->(ν_0ppm + pp*fs/SW)
+
+    ΩS_ppm = hz2ppmfunc.( F ./ (2*π) )
+    ΩS_ppm_sorted = sort(ΩS_ppm)
+
+    u_min = ppm2hzfunc(ΩS_ppm_sorted[1] - u_offset)
+    u_max = ppm2hzfunc(ΩS_ppm_sorted[end] + u_offset)
+
+    if !isfinite(P_min) || !isfinite(P_max)
+        P_min = hz2ppmfunc(u_min)
+        P_max = hz2ppmfunc(u_max)
+    end
+    P = LinRange(P_min, P_max, N_viz)
+    U = ppm2hzfunc.(P)
+    U_rad = U .* (2*π)
+    println("P = ", P) # debug.
+
+    # absorption Lorentzian.
+    q = uu->evalzerophasecl1Darray(uu, a, F, λ0)
+    q_U = q.(U_rad)
+
+    h = uu->evalzerophasecl1Darray(uu, a_ref, F_ref, λ0)
+    h_U = zeros(length(q_U))
+    if !isempty(a_ref)
+        h_U = h.(U_rad)
+        println("discrepancy between q_U and h_U: ", norm(q_U-h_U))
+    end
+
+    # plot.
+    PyPlot.figure(fig_num)
+    fig_num += 1
+
+    PyPlot.plot(P, q_U, "--", label = "test")
+    PyPlot.plot(P, h_U, "--", label = "reference")
+    PyPlot.gca().invert_xaxis()
+
+    PyPlot.legend()
+    PyPlot.title(title_string)
+
+    return fig_num
+end
+
+
 function plotgroups(title_string::String,
     P,
     U,
@@ -166,6 +221,18 @@ function sumabssmaller(x, threshold)
 end
 
 ###### for evaluating resonance groups and singlets.
+
+# barebones.
+function evalzerophasecl1Darray(u_rad, αs::Vector{T}, Ωs::Vector{T}, λ::T)::Complex{T} where T <: Real
+
+    out = zero(Complex{T})
+    for l = 1:length(αs)
+        out += evalzerophaseclpartitionelement(u_rad, αs[l], Ωs[l], λ)
+    end
+
+    return out
+end
+
 function evalzerophaseclpartitionelement(r,
     α::T, Ω::T, λ::T)::Complex{T} where T <: Real
 

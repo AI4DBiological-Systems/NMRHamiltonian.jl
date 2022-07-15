@@ -16,7 +16,7 @@ function sumabssmaller(x, threshold)
     return true
 end
 
-function prunecombocoherences!(A, α_relative_threshold, tol_coherence, Δc_partition_radius)
+function prunecombocoherences!(A, α_relative_lower_threshold, tol_coherence, Δc_partition_radius)
 
     for i = 1:length(A.Δc_m_compound)
 
@@ -28,7 +28,7 @@ function prunecombocoherences!(A, α_relative_threshold, tol_coherence, Δc_part
         A.Δc_m_compound[i] = A.Δc_m_compound[i][keep_flags]
 
         # remake Δc_bar.
-        α_tol = α_relative_threshold*maximum(A.αs[i])
+        α_tol = α_relative_lower_threshold*maximum(A.αs[i])
         part_inds, Δc_centroids = partitionresonancesbyneighbors(A.Δc_m_compound[i],
             A.αs[i], α_tol; radius = Δc_partition_radius)
 
@@ -39,7 +39,7 @@ function prunecombocoherences!(A, α_relative_threshold, tol_coherence, Δc_part
     return nothing
 end
 
-function prunecombocoherencesbar!(A, α_relative_threshold, tol_coherence, Δc_partition_radius)
+function prunecombocoherencesbar!(A, α_relative_lower_threshold, tol_coherence, Δc_partition_radius)
 
     for i = 1:length(A.Δc_m_compound)
 
@@ -51,7 +51,7 @@ function prunecombocoherencesbar!(A, α_relative_threshold, tol_coherence, Δc_p
         A.Δc_m_compound[i] = A.Δc_m_compound[i][keep_flags]
 
         # remake Δc_bar.
-        α_tol = α_relative_threshold*maximum(A.αs[i])
+        α_tol = α_relative_lower_threshold*maximum(A.αs[i])
         part_inds, Δc_centroids = partitionresonancesbyneighbors(A.Δc_m_compound[i],
             A.αs[i], α_tol; radius = Δc_partition_radius)
 
@@ -67,7 +67,7 @@ end
 
 function prunecombocoherencesbar2!(Δc_m_compound,
     αs, Ωs, Δc_bar, part_inds_compound;
-    α_relative_threshold = 0.05, tol_coherence = 1e-2, Δc_partition_radius = 0.3)
+    α_relative_lower_threshold = 0.05, tol_coherence = 1e-2, Δc_partition_radius = 0.3)
 
     for i = 1:length(Δc_m_compound)
 
@@ -79,7 +79,7 @@ function prunecombocoherencesbar2!(Δc_m_compound,
         #println("1 count(keep_flags) = ", count(keep_flags) )
 
         # remake Δc_bar.
-        α_tol = α_relative_threshold*maximum(αs[i])
+        α_tol = α_relative_lower_threshold*maximum(αs[i])
         part_inds, Δc_centroids = partitionresonancesbyneighbors(Δc_m_compound[i],
             αs[i], α_tol; radius = Δc_partition_radius)
 
@@ -125,9 +125,11 @@ function partitionresonancesbyneighbors(x_in::Vector{Vector{T}},
             X[:,r] = x[r]
         end
 
-        balltree = NearestNeighbors.BallTree(X,
-            NearestNeighbors.Minkowski(Minkowski_parameter);
-            reorder = false)
+        # balltree = NearestNeighbors.BallTree(X,
+        #     NearestNeighbors.Minkowski(Minkowski_parameter);
+        #     reorder = false)
+        balltree = NearestNeighbors.BallTree(X, MaxNormMetric(); reorder = false)
+
 
         inds = NearestNeighbors.inrange(balltree, x[max_ind], radius, true)
         push!(x_maxs, x[max_ind])
@@ -154,11 +156,12 @@ end
 function partitionresonances(coherence_state_pairs_sys, ms_sys,
     αs::Vector{Vector{T}}, Ωs::Vector{Vector{T}},
     N_spins_sys::Vector{Int};
-    α_relative_threshold = 0.05,
+    α_relative_lower_threshold = 0.05,
     Δc_partition_radius = 1e-1,
     ME::Vector{Vector{Vector{Int}}} = Vector{Vector{Vector{Int}}}(undef, 0),
     simple_coherence_atol::T = 1e-2,
-    prune_combo_Δc_flag = true) where T
+    prune_combo_Δc_flag = true,
+    α_relative_override_threshold = 15.0) where T
 
     N_groups = length(αs)
 
@@ -173,11 +176,20 @@ function partitionresonances(coherence_state_pairs_sys, ms_sys,
     N_systems = length(coherence_state_pairs_sys)
     @assert N_groups == N_systems == length(N_spins_sys)
     Δc_bar = Vector{Vector{Vector{T}}}(undef, N_systems)
-
+    c_states = Vector{Vector{Tuple{Int64, Int64}}}(undef, N_systems)
 
     for i = 1:N_systems
 
-        α_tol = α_relative_threshold*maximum(αs[i])
+        # as_max_normalized = αs[i] ./ maximum(αs[i])
+        # keep_flags = as_max_normalized .> α_relative_lower_threshold
+        # inds_amp = findall(keep_flags)
+
+        # as_normalized = αs[i] ./ sum(αs[i])
+        # keep_flags = as_normalized .> α_relative_lower_threshold
+        # inds_amp = findall(keep_flags)
+
+        Z = maximum(αs[i])
+        α_tol = α_relative_lower_threshold*Z
         inds_amp = findall(xx->(xx>α_tol), αs[i])
 
         c_states_prune = (coherence_state_pairs_sys[i])[inds_amp]
@@ -211,13 +223,20 @@ function partitionresonances(coherence_state_pairs_sys, ms_sys,
             # println("keep_flags[1] = ", keep_flags[1]) # debug.
             αs_i_prune = αs_i_prune[keep_flags]
             Ωs_i_prune = Ωs_i_prune[keep_flags]
+            c_states_prune = c_states_prune[keep_flags]
             Δc_m = Δc_m[keep_flags]
 
             # need a bit more tolerance for the sum filter, otherwise might filter too many components.
             N_DOF = length(Δc_m[1])
-            keep_flags = collect( sumabssmaller(Δc_m[l], 1 + ϵ*N_DOF ) for l = 1:length(Δc_m) )
+            keep_flags1 = collect( sumabssmaller(Δc_m[l], 1 + ϵ*N_DOF ) for l = 1:length(Δc_m) )
+
+            #keep_flags2 = αs_i_prune .> α_tol*α_relative_override_threshold
+            keep_flags2 = αs_i_prune .> Z*α_relative_override_threshold
+            keep_flags = keep_flags1 .| keep_flags2
+
             αs_i_prune = αs_i_prune[keep_flags]
             Ωs_i_prune = Ωs_i_prune[keep_flags]
+            c_states_prune = c_states_prune[keep_flags]
             Δc_m = Δc_m[keep_flags]
         end
         #println("Δc_m = ", Δc_m) # debug.
@@ -236,6 +255,7 @@ function partitionresonances(coherence_state_pairs_sys, ms_sys,
         Δc_m_set[i] = Δc_m
 
         Δc_bar[i] = Δc_centroids
+        c_states[i] = c_states_prune
     end
 
 
@@ -260,7 +280,7 @@ function partitionresonances(coherence_state_pairs_sys, ms_sys,
     #     end
     # end
 
-    return as, Fs, part_inds_set, Δc_m_set, Δc_bar
+    return as, Fs, part_inds_set, Δc_m_set, Δc_bar, c_states
 end
 
 
@@ -271,7 +291,7 @@ function setupmixtureSH(target_names::Vector{String},
     Phys::Vector{PhysicalParamsType{T}};
     config_path = "",
     tol_coherence = 1e-2,
-    α_relative_threshold = 0.05,
+    α_relative_lower_threshold = 0.05,
     Δc_partition_radius = 1e-1,
     simple_coherence_atol::T = 1e-2,
     prune_combo_Δc_flag::Bool = true) where {T <: Real, SST}
@@ -300,7 +320,7 @@ function setupmixtureSH(target_names::Vector{String},
             config_path = config_path,
             ME = Phys[n].ME,
             tol_coherence = tol_coherence,
-            α_relative_threshold = α_relative_threshold,
+            α_relative_lower_threshold = α_relative_lower_threshold,
             Δc_partition_radius = Δc_partition_radius,
             simple_coherence_atol = simple_coherence_atol,
             prune_combo_Δc_flag = prune_combo_Δc_flag)
@@ -326,10 +346,11 @@ function setupcompoundSH(name,
     ME::Vector{Vector{Vector{Int}}} = Vector{Vector{Vector{Int}}}(undef, 0),
     config_path::String = "",
     tol_coherence = 1e-2,
-    α_relative_threshold = 0.05,
+    α_relative_lower_threshold = 0.05,
     Δc_partition_radius = 1e-1,
     simple_coherence_atol::T = 1e-2,
-    prune_combo_Δc_flag = true) where T <: Real
+    prune_combo_Δc_flag = true,
+    α_relative_override_threshold::T = 10.0) where T <: Real
 
     if ispath(config_path)
 
@@ -338,9 +359,10 @@ function setupcompoundSH(name,
         dict = db_dict[name]
 
         tol_coherence = dict["coherence tolerance"]
-        α_relative_threshold = dict["relative amplitude threshold"]
+        α_relative_lower_threshold = dict["relative amplitude threshold"]
         Δc_partition_radius = dict["maximum Δc deviation"]
         simple_coherence_atol = dict["simple coherence absolute tolerance"]
+        α_relative_override_threshold = dict["override amplitude threshold"]
     end
 
 
@@ -386,13 +408,14 @@ function setupcompoundSH(name,
     N_spins_sys = collect( length(cs_sys[i]) for i = 1:length(cs_sys))
 
     αs, Ωs, part_inds_compound,
-    Δc_m_compound, Δc_bar = partitionresonances(coherence_state_pairs_sys,
+    Δc_m_compound, Δc_bar, c_states = partitionresonances(coherence_state_pairs_sys,
     ms_sys, αs_spin_sys, Ωs_spin_sys, N_spins_sys;
     ME = ME,
-    α_relative_threshold = α_relative_threshold,
+    α_relative_lower_threshold = α_relative_lower_threshold,
     Δc_partition_radius = Δc_partition_radius,
     simple_coherence_atol = simple_coherence_atol,
-    prune_combo_Δc_flag = prune_combo_Δc_flag)
+    prune_combo_Δc_flag = prune_combo_Δc_flag,
+    α_relative_override_threshold = α_relative_override_threshold)
 
     # f = uu->evalcLcompoundviapartitions(uu, d,
     # αs, Ωs, κs_λ, κs_β, λ0, Δc_m_compound, part_inds_compound)
@@ -400,13 +423,13 @@ function setupcompoundSH(name,
     # if prune_combo_Δc_flag
 
     #     # The following pruning strategy gave dubious spectra shape for L-Leucine.
-    #     #prunecombocoherences!(As[1], α_relative_threshold, tol_coherence, Δc_partition_radius)
+    #     #prunecombocoherences!(As[1], α_relative_lower_threshold, tol_coherence, Δc_partition_radius)
 
-    #     #prunecombocoherencesbar!(As[n], α_relative_threshold, tol_coherence, Δc_partition_radius)
+    #     #prunecombocoherencesbar!(As[n], α_relative_lower_threshold, tol_coherence, Δc_partition_radius)
 
     #     prunecombocoherencesbar2!(Δc_m_compound,
     #         αs, Ωs, Δc_bar, part_inds_compound;
-    #         α_relative_threshold = α_relative_threshold, tol_coherence = tol_coherence, Δc_partition_radius = Δc_partition_radius)
+    #         α_relative_lower_threshold = α_relative_lower_threshold, tol_coherence = tol_coherence, Δc_partition_radius = Δc_partition_radius)
     # end
 
     return αs, Ωs, part_inds_compound, Δc_m_compound, Δc_bar, N_spins_sys,
