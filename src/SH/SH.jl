@@ -47,7 +47,8 @@ function setupcompoundspectrum!( css_sys::Vector{Vector{T}},
     N_spins_singlet::Vector{Int},
     fs::T,
     SW::T;
-    tol_coherence = 1e-2) where T <: Real
+    tol_coherence = 1e-2,
+    normalize_α_for_spin_sys::Bool = true) where T <: Real
 
     @assert length(J_vals_sys) == length(J_inds_sys) == length(css_sys)
     #
@@ -81,8 +82,10 @@ function setupcompoundspectrum!( css_sys::Vector{Vector{T}},
         tol_coherence = tol_coherence)
 
         # normalize intensity according to number of spins.
-        N_spins = length(css_sys[i])
-        normalizetoNspins!(αs[i], N_spins)
+        if normalize_α_for_spin_sys
+            N_spins = length(css_sys[i])
+            normalizetoNspins!(αs[i], N_spins)
+        end
 
         Id = getsingleId()
         ms_sys[i] = computequantumnumbers(Q_sys[i], Id)

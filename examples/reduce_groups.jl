@@ -39,12 +39,13 @@ SH_config_path = "/home/roy/Documents/repo/NMRData/input/SH_configs/select_compo
 surrogate_config_path = "/home/roy/Documents/repo/NMRData/input/surrogate_configs/select_compounds_SH_configs.json"
 
 #molecule_names = ["L-Serine"; ]
-molecule_names = ["Agmatine"; ]
+#molecule_names = ["Agmatine"; ]
 #molecule_names = ["L-Glutamine"; ]
-#molecule_names = ["alpha-D-Glucose"; ]
-#molecule_names = ["beta-D-Glucose"; ];
+molecule_names = ["alpha-D-Glucose"; ]
+#molecule_names = ["beta-D-Glucose"; ]; # undertest.
 #molecule_names = ["Ethanol"; ];
 #molecule_names = ["L-Leucine"; ]
+#molecule_names = ["L-Phenylalanine"; ]
 
 #molecule_names = ["alpha-D-Glucose-brain"; ]
 #molecule_names = ["beta-D-Glucose-brain"; ];
@@ -83,39 +84,120 @@ println("Timing: setupmixtureproxies()")
     fs, SW, ν_0ppm,
     Phys;
     config_path = SH_config_path,
-    prune_combo_Δc_flag = false)
+    prune_Δc_option = 0,
+    normalize_α_for_spin_sys = false)
 #
 @time Bs = NMRHamiltonian.setupmixtureSH(molecule_names,
     fs, SW, ν_0ppm,
     Phys;
     config_path = SH_config_path,
-    prune_combo_Δc_flag = true)
+    prune_Δc_option = 1,
+    normalize_α_for_spin_sys = false)
+#
+@time Cs = NMRHamiltonian.setupmixtureSH(molecule_names,
+    fs, SW, ν_0ppm,
+    Phys;
+    config_path = SH_config_path,
+    prune_Δc_option = 2,
+    normalize_α_for_spin_sys = false)
+#
+@time Ds = NMRHamiltonian.setupmixtureSH(molecule_names,
+    fs, SW, ν_0ppm,
+    Phys;
+    config_path = SH_config_path,
+    prune_Δc_option = 3,
+    normalize_α_for_spin_sys = false)
+#
+@time Es = NMRHamiltonian.setupmixtureSH(molecule_names,
+    fs, SW, ν_0ppm,
+    Phys;
+    config_path = SH_config_path,
+    prune_Δc_option = 4,
+    normalize_α_for_spin_sys = false)
 
 #
 i = 1
-println("No combo reducing: Spin group $(i):")
+println("A: No combo reducing: Spin group $(i):")
 println("Number of resonance groups: ", length(As[1].Δc_bar[i]))
 println("Number of components: ", length(As[1].αs[i]))
 println()
 
-println("Combo reduced: Spin group $(i):")
+println("B: Combo reduced: Spin group $(i):")
 println("Number of resonance groups: ", length(Bs[1].Δc_bar[i]))
 println("Number of components: ", length(Bs[1].αs[i]))
+println()
+
+println("C: Combo reduced: Spin group $(i):")
+println("Number of resonance groups: ", length(Cs[1].Δc_bar[i]))
+println("Number of components: ", length(Cs[1].αs[i]))
+println()
+
+println("D: Combo reduced: Spin group $(i):")
+println("Number of resonance groups: ", length(Ds[1].Δc_bar[i]))
+println("Number of components: ", length(Ds[1].αs[i]))
+println()
+
+println("E: Combo reduced: Spin group $(i):")
+println("Number of resonance groups: ", length(Es[1].Δc_bar[i]))
+println("Number of components: ", length(Es[1].αs[i]))
 println()
 
 fig_num = plotabsorptionlorentzians(Bs[1].αs[i], Bs[1].Ωs[i], λ0, fs, SW, ν_0ppm, fig_num;
     a_ref = As[1].αs[i],
     F_ref = As[1].Ωs[i],
-    title_string = "$(spectrometer_freq) MHz: Pruned vs reference",
+    title_string = "$(spectrometer_freq) MHz: B vs reference",
+    P_min = P_min, P_max = P_max)
+#
+fig_num = plotabsorptionlorentzians(Cs[1].αs[i], Cs[1].Ωs[i], λ0, fs, SW, ν_0ppm, fig_num;
+    a_ref = As[1].αs[i],
+    F_ref = As[1].Ωs[i],
+    title_string = "$(spectrometer_freq) MHz: C vs reference",
+    P_min = P_min, P_max = P_max)
+#
+fig_num = plotabsorptionlorentzians(Ds[1].αs[i], Ds[1].Ωs[i], λ0, fs, SW, ν_0ppm, fig_num;
+    a_ref = As[1].αs[i],
+    F_ref = As[1].Ωs[i],
+    title_string = "$(spectrometer_freq) MHz: D vs reference",
+    P_min = P_min, P_max = P_max)
+#
+#
+fig_num = plotabsorptionlorentzians(Es[1].αs[i], Es[1].Ωs[i], λ0, fs, SW, ν_0ppm, fig_num;
+    a_ref = As[1].αs[i],
+    F_ref = As[1].Ωs[i],
+    title_string = "$(spectrometer_freq) MHz: E vs reference",
+    P_min = P_min, P_max = P_max)
+#
+fig_num = plotabsorptionlorentzians(Ds[1].αs[i], Ds[1].Ωs[i], λ0, fs, SW, ν_0ppm, fig_num;
+    a_ref = Bs[1].αs[i],
+    F_ref = Bs[1].Ωs[i],
+    title_string = "$(spectrometer_freq) MHz: D vs B",
+    P_min = P_min, P_max = P_max)
+#
+fig_num = plotabsorptionlorentzians(Ds[1].αs[i], Ds[1].Ωs[i], λ0, fs, SW, ν_0ppm, fig_num;
+    a_ref = Es[1].αs[i],
+    F_ref = Es[1].Ωs[i],
+    title_string = "$(spectrometer_freq) MHz: D vs E",
     P_min = P_min, P_max = P_max)
 
-#cb = Δc_bar[i]
+##### some more info for option 1 (As) and option 2 (Bs).
 
-# same_flags = collect( isapprox(cb[k], -cb[15]; atol = 1e-1) for k = 1:length(cb) )
-# count(same_flags)
+F_A = As[1].Ωs[i] ./ (2*π)
+P_A = hz2ppmfunc.(F_A)
+inds_A = As[1].part_inds_compound[i]
 
-#cb_mat = array2matrix(cb)
+F_B = Bs[1].Ωs[i] ./ (2*π)
+P_B = hz2ppmfunc.(F_B)
+inds_B = Bs[1].part_inds_compound[i]
 
-# currently trying to figure out if no-pruning leads to too many components.
-# might be true for alpha-Glucose.
-# try brai metabolite study for J-coupling.
+cb_B = Bs[1].Δc_bar[i]
+cb_A = As[1].Δc_bar[i]
+
+P_A_groups = collect( P_A[inds_A[k]] for k = 1:length(inds_A) )
+P_A_avgs = collect( Statistics.mean(P_A[inds_A[k]]) for k = 1:length(inds_A) )
+
+P_B_groups = collect( P_B[inds_B[k]] for k = 1:length(inds_B) )
+P_B_avgs = collect( Statistics.mean(P_B[inds_B[k]]) for k = 1:length(inds_B) )
+sort_inds_B = sortperm(P_B_avgs)
+
+MB = [array2matrix(cb_B); P_B_avgs']
+MA = [array2matrix(cb_A); P_A_avgs']

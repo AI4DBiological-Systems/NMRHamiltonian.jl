@@ -160,7 +160,7 @@ function partitionresonances(coherence_state_pairs_sys, ms_sys,
     Δc_partition_radius = 1e-1,
     ME::Vector{Vector{Vector{Int}}} = Vector{Vector{Vector{Int}}}(undef, 0),
     simple_coherence_atol::T = 1e-2,
-    prune_combo_Δc_flag = true,
+    prune_Δc_option = 0,
     α_relative_override_threshold = 15.0) where T
 
     N_groups = length(αs)
@@ -212,38 +212,23 @@ function partitionresonances(coherence_state_pairs_sys, ms_sys,
 
         ## remove components that don't have the "near simple coherence" criteria.
         #println("Δc_m = ", Δc_m) # debug.
-        if prune_combo_Δc_flag
-
-            ϵ = simple_coherence_atol # easier to read.
-
-
-            keep_flags = collect( allabssmaller(Δc_m[l], 1 + ϵ) for l = 1:length(Δc_m) )
-            # println("Δc_m[1]]= ", Δc_m[1]) # debug.
-            # println("1+simple_coherence_atol = ", 1+simple_coherence_atol) # debug.
-            # println("keep_flags[1] = ", keep_flags[1]) # debug.
-            αs_i_prune = αs_i_prune[keep_flags]
-            Ωs_i_prune = Ωs_i_prune[keep_flags]
-            c_states_prune = c_states_prune[keep_flags]
-            Δc_m = Δc_m[keep_flags]
-
-            # need a bit more tolerance for the sum filter, otherwise might filter too many components.
-            N_DOF = length(Δc_m[1])
-            keep_flags1 = collect( sumabssmaller(Δc_m[l], 1 + ϵ*N_DOF ) for l = 1:length(Δc_m) )
-
-            #keep_flags2 = αs_i_prune .> α_tol*α_relative_override_threshold
-            keep_flags2 = αs_i_prune .> Z*α_relative_override_threshold
-            keep_flags = keep_flags1 .| keep_flags2
-
-            αs_i_prune = αs_i_prune[keep_flags]
-            Ωs_i_prune = Ωs_i_prune[keep_flags]
-            c_states_prune = c_states_prune[keep_flags]
-            Δc_m = Δc_m[keep_flags]
-        end
-        #println("Δc_m = ", Δc_m) # debug.
 
         part_inds = Vector{Vector{Int}}(undef, 0)
         Δc_centroids = Vector{Vector{T}}(undef, 0)
-        if !isempty(Δc_m)
+
+        if prune_Δc_option > 0
+
+            ϵ = simple_coherence_atol # easier to read.
+            override_intensity = Z*α_relative_override_threshold
+
+            αs_i_prune, Ωs_i_prune, Δc_m, c_states_prune, part_inds,
+                Δc_centroids = prunecoherencemain(αs_i_prune,
+                Ωs_i_prune, Δc_m, c_states_prune, ϵ, prune_Δc_option,
+                override_intensity, Δc_partition_radius, α_tol)
+        end
+
+        if !isempty(Δc_m) && isempty(part_inds)
+
             part_inds, Δc_centroids = partitionresonancesbyneighbors(Δc_m,
                 αs_i_prune, α_tol; radius = Δc_partition_radius)
         end
@@ -294,7 +279,8 @@ function setupmixtureSH(target_names::Vector{String},
     α_relative_lower_threshold = 0.05,
     Δc_partition_radius = 1e-1,
     simple_coherence_atol::T = 1e-2,
-    prune_combo_Δc_flag::Bool = true) where {T <: Real, SST}
+    prune_Δc_option::Int = 0,
+    normalize_α_for_spin_sys = true) where {T <: Real, SST}
 
     ppm2hzfunc = pp->(ν_0ppm + pp*fs/SW)
 
@@ -323,7 +309,8 @@ function setupmixtureSH(target_names::Vector{String},
             α_relative_lower_threshold = α_relative_lower_threshold,
             Δc_partition_radius = Δc_partition_radius,
             simple_coherence_atol = simple_coherence_atol,
-            prune_combo_Δc_flag = prune_combo_Δc_flag)
+            prune_Δc_option = prune_Δc_option,
+            normalize_α_for_spin_sys = normalize_α_for_spin_sys)
 
         As[n] = SHType(αs, Ωs, Δc_m_compound, part_inds_compound,
             Δc_bar, N_spins_sys, αs_singlets, Ωs_singlets, fs, SW, ν_0ppm)
@@ -349,8 +336,9 @@ function setupcompoundSH(name,
     α_relative_lower_threshold = 0.05,
     Δc_partition_radius = 1e-1,
     simple_coherence_atol::T = 1e-2,
-    prune_combo_Δc_flag = true,
-    α_relative_override_threshold::T = 10.0) where T <: Real
+    prune_Δc_option::Int = 0,
+    α_relative_override_threshold::T = 10.0,
+    normalize_α_for_spin_sys = true) where T <: Real
 
     if ispath(config_path)
 
@@ -388,7 +376,8 @@ function setupcompoundSH(name,
     M_sys = setupcompoundspectrum!(cs_sys,
         J_vals_sys, J_inds_sys_local, intermediates_sys,
         ppm2hzfunc, cs_singlets, N_spins_singlet, fs, SW;
-        tol_coherence = tol_coherence)
+        tol_coherence = tol_coherence,
+        normalize_α_for_spin_sys = normalize_α_for_spin_sys)
 
     k = findfirst(xx->length(xx)==1, αs_inp)
     αs_spin_sys = copy(αs_inp)
@@ -414,23 +403,8 @@ function setupcompoundSH(name,
     α_relative_lower_threshold = α_relative_lower_threshold,
     Δc_partition_radius = Δc_partition_radius,
     simple_coherence_atol = simple_coherence_atol,
-    prune_combo_Δc_flag = prune_combo_Δc_flag,
+    prune_Δc_option = prune_Δc_option,
     α_relative_override_threshold = α_relative_override_threshold)
-
-    # f = uu->evalcLcompoundviapartitions(uu, d,
-    # αs, Ωs, κs_λ, κs_β, λ0, Δc_m_compound, part_inds_compound)
-
-    # if prune_combo_Δc_flag
-
-    #     # The following pruning strategy gave dubious spectra shape for L-Leucine.
-    #     #prunecombocoherences!(As[1], α_relative_lower_threshold, tol_coherence, Δc_partition_radius)
-
-    #     #prunecombocoherencesbar!(As[n], α_relative_lower_threshold, tol_coherence, Δc_partition_radius)
-
-    #     prunecombocoherencesbar2!(Δc_m_compound,
-    #         αs, Ωs, Δc_bar, part_inds_compound;
-    #         α_relative_lower_threshold = α_relative_lower_threshold, tol_coherence = tol_coherence, Δc_partition_radius = Δc_partition_radius)
-    # end
 
     return αs, Ωs, part_inds_compound, Δc_m_compound, Δc_bar, N_spins_sys,
     αs_singlets, Ωs_singlets

@@ -1,0 +1,198 @@
+function prunecoherences0(αs_inp, Ωs_inp, Δc_m_inp, c_states_inp, ϵ)
+    #
+    keep_flags = collect( allabssmaller(Δc_m_inp[l], 1 + ϵ) for l = 1:length(Δc_m_inp) )
+    # println("Δc_m[1]]= ", Δc_m[1]) # debug.
+    # println("1+simple_coherence_atol = ", 1+simple_coherence_atol) # debug.
+    # println("keep_flags[1] = ", keep_flags[1]) # debug.
+    αs = αs_inp[keep_flags]
+    Ωs = Ωs_inp[keep_flags]
+    Δc_m = Δc_m_inp[keep_flags]
+    c_states = c_states_inp[keep_flags]
+
+    # need a bit more tolerance for the sum filter, otherwise might filter too many components.
+    N_DOF = length(Δc_m_inp[1])
+    keep_flags2 = collect( sumabssmaller(Δc_m[l], 1 + ϵ*N_DOF ) for l = 1:length(Δc_m) )
+
+    return αs, Ωs, Δc_m, c_states, keep_flags2
+end
+
+function addentriestogroupsbyproximity(centers::Vector{T}, f, X::Vector{T}, radius;
+    skip_flags = falses(length(X))) where T
+
+    M = length(X)
+    assignment_inds = zeros(Int, M)
+
+    for m = 1:M
+        if !skip_flags[m]
+            x = X[m]
+            ind = findfirst(zz->(f(x, zz) < radius), centers)
+
+            if typeof(ind) == Int
+                assignment_inds[m] = ind
+            end
+        end
+    end
+
+    return assignment_inds
+end
+
+function getprunedcoherences(αs_inp, Ωs_inp, Δc_m_inp, c_states_inp, keep_flags)
+
+    αs = αs_inp[keep_flags]
+    Ωs = Ωs_inp[keep_flags]
+    Δc_m = Δc_m_inp[keep_flags]
+    c_states = c_states_inp[keep_flags]
+
+    return αs, Ωs, Δc_m, c_states
+end
+
+# mutates αs, Ωs, Δc_m, c_states, part_inds.
+function updateresonancegroups!(αs, Ωs, Δc_m, c_states, part_inds,
+    αs_inp, Ωs_inp, Δc_m_inp, c_states_inp, assignment_inds)
+
+    @assert length(αs) == length(Ωs) == length(Δc_m) == length(c_states)
+
+    M = length(assignment_inds)
+    for m = 1:M
+        ind = assignment_inds[m]
+
+        if ind > 0
+            push!(αs, αs_inp[m])
+            push!(Ωs, Ωs_inp[m])
+            push!(Δc_m, Δc_m_inp[m])
+            push!(c_states, c_states_inp[m])
+
+            push!(part_inds[ind], length(αs))
+        end
+    end
+
+    return nothing
+end
+
+function prunecoherencemain(αs_inp::Vector{T}, Ωs_inp::Vector{T},
+    Δc_m::Vector{Vector{T}}, c_states_inp, ϵ::T, option::Int,
+    override_intensity::T, Δc_partition_radius::T, min_α_tol::T) where T
+    # println("min_α_tol = ", min_α_tol)
+    # @assert 1==43
+    αs_int, Ωs_int, Δc_m_int, c_states_int,
+        keep_flags2 = prunecoherences0(αs_inp, Ωs_inp, Δc_m, c_states_inp, ϵ)
+
+    part_inds = Vector{Vector{Int}}(undef, 0)
+    Δc_centroids = Vector{Vector{T}}(undef, 0)
+
+    αs, Ωs, Δc_m, c_states = αs_int, Ωs_int, Δc_m_int, c_states_int
+    if option == 1
+        αs, Ωs, Δc_m, c_states = getprunedcoherences(αs_int, Ωs_int, Δc_m_int, c_states_int, keep_flags2)
+
+        return αs, Ωs, Δc_m, c_states, part_inds, Δc_centroids
+
+    elseif option == 2
+
+        keep_flags3 = αs_int .> override_intensity
+        keep_flags = keep_flags2 .| keep_flags3
+        αs, Ωs, Δc_m, c_states = getprunedcoherences(αs_int, Ωs_int, Δc_m_int,
+            c_states_int, keep_flags)
+
+        return αs, Ωs, Δc_m, c_states, part_inds, Δc_centroids
+
+    elseif option == 3 || option == 4
+
+        if !isempty(Δc_m)
+            αs, Ωs, Δc_m, c_states = getprunedcoherences(αs_int, Ωs_int, Δc_m_int, c_states_int, keep_flags2)
+
+            part_inds, Δc_centroids = partitionresonancesbyneighbors(Δc_m,
+                αs, min_α_tol; radius = Δc_partition_radius)
+
+            if option == 3
+                assignment_inds = addentriestogroupsbyproximity(Δc_centroids, evalmaxnorm,
+                Δc_m_int, Δc_partition_radius; skip_flags = keep_flags2)
+            elseif option == 4
+                assignment_inds = addentriestogroups4(Δc_centroids, evalmaxnorm,
+                Δc_m_int, Δc_partition_radius; skip_flags = keep_flags2,
+                atol = ϵ, cancel_tol = ϵ)
+            end
+
+            updateresonancegroups!(αs, Ωs, Δc_m, c_states, part_inds,
+                αs_int, Ωs_int, Δc_m_int, c_states_int, assignment_inds)
+
+            return αs, Ωs, Δc_m, c_states, part_inds, Δc_centroids
+        end
+    end
+
+    return αs, Ωs, Δc_m, c_states, part_inds, Δc_centroids
+end
+
+
+
+
+# at least one entry is very similar.
+function isapproxcombocoherence0(c_test::Vector{T},
+    Δc::Vector{T}; atol = 1e-2, cancel_tol = 1e-2) where T
+
+    # per-element relative discrepancy.
+    d = Δc-c_test
+    relative_abs_d = abs.(d)./abs.(Δc)
+    min_val, min_ind = findmin(relative_abs_d)
+
+    if min_val < atol
+
+        deleteat!(d, min_ind)
+        if sum(d) < cancel_tol
+            return true
+        end
+    end
+
+    return false
+end
+
+function isapproxcombocoherence(c_test::Vector{T},
+    Δc::Vector{T}; atol = 1e-2, cancel_tol = 1e-2) where T
+
+    # per-element relative discrepancy.
+    d = Δc-c_test
+    relative_abs_d = abs.(d)./abs.(Δc)
+    #min_val, min_ind = findmin(relative_abs_d)
+
+    # find elements for testing.
+    keep_flags = relative_abs_d .> atol
+
+    if count(keep_flags) < length(Δc)
+
+        # at least one element of c_test is a good match with Δc.
+        if sum(d[keep_flags]) < cancel_tol
+            return true
+        end
+    end
+
+    return false
+end
+
+# by proximity or is a combo coherence of an entry of centers.
+function addentriestogroups4(centers::Vector{T}, f, X::Vector{T}, radius;
+    skip_flags = falses(length(X)), atol = atol, cancel_tol = cancel_tol) where T
+
+    M = length(X)
+    assignment_inds = zeros(Int, M)
+
+    for m = 1:M
+        if !skip_flags[m]
+            x = X[m]
+            ind = findfirst(zz->(f(x, zz) < radius), centers)
+
+
+
+            if typeof(ind) == Int
+                assignment_inds[m] = ind
+            else
+                status = collect( isapproxcombocoherence(x, centers[j]; atol = atol, cancel_tol = cancel_tol) for j = 1:length(centers) )
+
+                if any(status)
+                    assignment_inds[m] = findfirst(status)
+                end
+            end
+
+        end
+    end
+
+    return assignment_inds
+end

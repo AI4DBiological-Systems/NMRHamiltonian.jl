@@ -19,6 +19,7 @@ include("./SH/SH.jl")
 include("./SH/Hamiltonian.jl")
 include("./SH/operators.jl")
 include("./SH/resonance_partitioning.jl")
+include("./SH/prune_coherence.jl")
 include("./SH/reduce_nuclei.jl")
 
 end
