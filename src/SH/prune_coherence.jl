@@ -71,7 +71,8 @@ end
 
 function prunecoherencemain(αs_inp::Vector{T}, Ωs_inp::Vector{T},
     Δc_m::Vector{Vector{T}}, c_states_inp, ϵ::T, option::Int,
-    override_intensity::T, Δc_partition_radius::T, min_α_tol::T) where T
+    override_intensity::T, Δc_partition_radius::T, min_α_tol::T;
+    min_threshold = -1.1) where T
     # println("min_α_tol = ", min_α_tol)
     # @assert 1==43
     αs_int, Ωs_int, Δc_m_int, c_states_int,
@@ -95,7 +96,7 @@ function prunecoherencemain(αs_inp::Vector{T}, Ωs_inp::Vector{T},
 
         return αs, Ωs, Δc_m, c_states, part_inds, Δc_centroids
 
-    elseif option == 3 || option == 4
+    elseif option == 3 || option == 4 || option == 5 || option == 6
 
         if !isempty(Δc_m)
             αs, Ωs, Δc_m, c_states = getprunedcoherences(αs_int, Ωs_int, Δc_m_int, c_states_int, keep_flags2)
@@ -103,13 +104,36 @@ function prunecoherencemain(αs_inp::Vector{T}, Ωs_inp::Vector{T},
             part_inds, Δc_centroids = partitionresonancesbyneighbors(Δc_m,
                 αs, min_α_tol; radius = Δc_partition_radius)
 
-            if option == 3
+            if option == 3 # allow Δc that are close to a Δc_bar wrt maxnorm.
                 assignment_inds = addentriestogroupsbyproximity(Δc_centroids, evalmaxnorm,
                 Δc_m_int, Δc_partition_radius; skip_flags = keep_flags2)
-            elseif option == 4
+
+            elseif option == 4 # union of 3 and "close" to a combo coherence. wrt isapproxcombocoherence()
                 assignment_inds = addentriestogroups4(Δc_centroids, evalmaxnorm,
                 Δc_m_int, Δc_partition_radius; skip_flags = keep_flags2,
                 atol = ϵ, cancel_tol = ϵ)
+
+            elseif option == 5 # allow combo coherence that are similar to an existing Δc_bar.
+                if min_threshold < 0
+                    largest_Δc_components = collect( maximum(abs.(Δc_centroids[k])) for k = 1:length(Δc_centroids))
+                    min_threshold = minimum(largest_Δc_components)/2
+                    #min_threshold = 0.99 # debug.
+                end
+
+                assignment_inds = addentriestogroups5(Δc_centroids, evalmaxnorm,
+                Δc_m_int, Δc_partition_radius; skip_flags = keep_flags2,
+                min_threshold = min_threshold, zero_tol_per_spin = ϵ)
+
+            elseif option == 6 # union 5 with 4.
+                if min_threshold < 0
+                    largest_Δc_components = collect( maximum(abs.(Δc_centroids[k])) for k = 1:length(Δc_centroids))
+                    min_threshold = minimum(largest_Δc_components)/2
+                    #min_threshold = 0.99 # debug.
+                end
+
+                assignment_inds = addentriestogroups6(Δc_centroids, evalmaxnorm,
+                Δc_m_int, Δc_partition_radius; skip_flags = keep_flags2,
+                min_threshold = min_threshold, zero_tol_per_spin = ϵ)
             end
 
             updateresonancegroups!(αs, Ωs, Δc_m, c_states, part_inds,
@@ -179,8 +203,6 @@ function addentriestogroups4(centers::Vector{T}, f, X::Vector{T}, radius;
             x = X[m]
             ind = findfirst(zz->(f(x, zz) < radius), centers)
 
-
-
             if typeof(ind) == Int
                 assignment_inds[m] = ind
             else
@@ -188,6 +210,13 @@ function addentriestogroups4(centers::Vector{T}, f, X::Vector{T}, radius;
 
                 if any(status)
                     assignment_inds[m] = findfirst(status)
+                    # if count(status) > 1
+                    #     println("x = ", x)
+                    #     println("m = ", m)
+                    #     println("centers = ", centers)
+                    #     println("status = ", status)
+                    #     println()
+                    # end
                 end
             end
 
@@ -195,4 +224,113 @@ function addentriestogroups4(centers::Vector{T}, f, X::Vector{T}, radius;
     end
 
     return assignment_inds
+end
+
+function addentriestogroups6(centers::Vector{T}, f, X::Vector{T}, radius;
+    skip_flags = falses(length(X)),
+    min_threshold = 0.2,
+    zero_tol_per_spin = 1e-2) where T
+
+    M = length(X)
+    assignment_inds = zeros(Int, M)
+
+    zero_tol = length(X[1]) * zero_tol_per_spin
+
+    for m = 1:M
+        if !skip_flags[m]
+            x = X[m]
+            ind = findfirst(zz->(f(x, zz) < radius), centers)
+
+            if typeof(ind) == Int
+                assignment_inds[m] = ind
+            else
+
+                Us = getcentermatrices(centers; min_threshold = min_threshold)
+                ys = collect( Us[k]*x for k = 1:length(Us) )
+                min_val, min_ind = findmin(abs.(sum.(ys)))
+
+                if min_val < zero_tol
+                    assignment_inds[m] = min_ind
+                end
+            end
+
+        end
+    end
+
+    return assignment_inds
+end
+
+function addentriestogroups5(centers::Vector{T}, f, X::Vector{T}, radius;
+    skip_flags = falses(length(X)),
+    min_threshold = 0.2,
+    zero_tol_per_spin = 1e-2) where T
+
+    M = length(X)
+    assignment_inds = zeros(Int, M)
+
+    zero_tol = length(X[1]) * zero_tol_per_spin
+
+    for m = 1:M
+        if !skip_flags[m]
+            x = X[m]
+            # ind = findfirst(zz->(f(x, zz) < radius), centers)
+            #
+            # if typeof(ind) == Int
+            #     assignment_inds[m] = ind
+            # else
+
+                Us = getcentermatrices(centers; min_threshold = min_threshold)
+                ys = collect( Us[k]*x for k = 1:length(Us) )
+                min_val, min_ind = findmin(abs.(sum.(ys)))
+
+                if min_val < zero_tol
+                    println("centers = ", centers)
+                    println("x = ", x)
+                    println()
+                    assignment_inds[m] = min_ind
+                end
+            #end
+
+        end
+    end
+
+    return assignment_inds
+end
+
+function findmaincontributors(c::Vector{T}; min_threshold::T = 0.2) where T
+    inds = Vector{Int}(undef, 0)
+
+    for k = 1:length(c)
+        if abs(c[k]) > min_threshold
+            push!(inds, k)
+        end
+    end
+
+    return inds
+end
+
+# replace the diagonals of the identity
+function getcentermatrices(cbs::Vector{Vector{T}}; min_threshold = 0.2) where T
+    K = length(cbs)
+
+    Qs = Vector{Matrix{T}}(undef, K)
+
+    for k = 1:K
+        cb = cbs[k]
+        Q = collect(LinearAlgebra.I(length(cb)))
+
+        ## single.
+        # val, ind = findmax(abs.(cb))
+        # Q[ind,ind] = 0
+
+        ## multiple.
+        inds = findmaincontributors(cb; min_threshold = min_threshold)
+        for i in inds
+            Q[i,i] = 0
+        end
+
+        Qs[k] = Q
+    end
+
+    return Qs
 end

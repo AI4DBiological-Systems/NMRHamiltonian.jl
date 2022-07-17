@@ -38,14 +38,15 @@ SH_config_path = "/home/roy/Documents/repo/NMRData/input/SH_configs/select_compo
 #SH_config_path = "/home/roy/Documents/repo/NMRData/input/SH_configs/select_compounds_SH_configs_low_intensity_threshold.json"
 surrogate_config_path = "/home/roy/Documents/repo/NMRData/input/surrogate_configs/select_compounds_SH_configs.json"
 
-#molecule_names = ["L-Serine"; ]
-#molecule_names = ["Agmatine"; ]
-#molecule_names = ["L-Glutamine"; ]
-molecule_names = ["alpha-D-Glucose"; ]
-#molecule_names = ["beta-D-Glucose"; ]; # undertest.
+molecule_names = ["L-Serine"; ]
+#molecule_names = ["Agmatine"; ] # no 400
+#molecule_names = ["L-Glutamine"; ] # no 400
+#molecule_names = ["alpha-D-Glucose"; ] #ya 400
+#molecule_names = ["beta-D-Glucose"; ]; # ya. 400
 #molecule_names = ["Ethanol"; ];
-#molecule_names = ["L-Leucine"; ]
+#molecule_names = ["L-Leucine"; ] # ya 400, 700
 #molecule_names = ["L-Phenylalanine"; ]
+#molecule_names = ["L-Lysine"; ]
 
 #molecule_names = ["alpha-D-Glucose-brain"; ]
 #molecule_names = ["beta-D-Glucose-brain"; ];
@@ -56,10 +57,10 @@ P_max = Inf
 # P_min = 3.6
 # P_max = 4
 
-#fs, SW, ν_0ppm = fetchsamplemachinesettings("400")
+fs, SW, ν_0ppm = fetchsamplemachinesettings("400")
 #fs, SW, ν_0ppm = fetchsamplemachinesettings("500")
 #fs, SW, ν_0ppm = fetchsamplemachinesettings("600")
-fs, SW, ν_0ppm = fetchsamplemachinesettings("700")
+#fs, SW, ν_0ppm = fetchsamplemachinesettings("700") # alpha-D-glucose has 2 counts.
 #fs, SW, ν_0ppm = fetchsamplemachinesettings("900")
 
 # path to the json file that provides the mapping from a compound name to its spin system info file name.
@@ -107,13 +108,21 @@ println("Timing: setupmixtureproxies()")
     config_path = SH_config_path,
     prune_Δc_option = 3,
     normalize_α_for_spin_sys = false)
-#
+
 @time Es = NMRHamiltonian.setupmixtureSH(molecule_names,
     fs, SW, ν_0ppm,
     Phys;
     config_path = SH_config_path,
     prune_Δc_option = 4,
     normalize_α_for_spin_sys = false)
+#
+@time Fs = NMRHamiltonian.setupmixtureSH(molecule_names,
+    fs, SW, ν_0ppm,
+    Phys;
+    config_path = SH_config_path,
+    prune_Δc_option = 5,
+    normalize_α_for_spin_sys = false)
+
 
 #
 i = 1
@@ -142,6 +151,17 @@ println("Number of resonance groups: ", length(Es[1].Δc_bar[i]))
 println("Number of components: ", length(Es[1].αs[i]))
 println()
 
+println("F: Combo reduced: Spin group $(i):")
+println("Number of resonance groups: ", length(Fs[1].Δc_bar[i]))
+println("Number of components: ", length(Fs[1].αs[i]))
+println()
+
+#
+# ## debug.
+# X = As[1].Δc_m_compound[i]
+# centers = Es[1].Δc_bar[i]
+# C = array2matrix(centers)
+
 fig_num = plotabsorptionlorentzians(Bs[1].αs[i], Bs[1].Ωs[i], λ0, fs, SW, ν_0ppm, fig_num;
     a_ref = As[1].αs[i],
     F_ref = As[1].Ωs[i],
@@ -167,6 +187,12 @@ fig_num = plotabsorptionlorentzians(Es[1].αs[i], Es[1].Ωs[i], λ0, fs, SW, ν_
     title_string = "$(spectrometer_freq) MHz: E vs reference",
     P_min = P_min, P_max = P_max)
 #
+fig_num = plotabsorptionlorentzians(Fs[1].αs[i], Fs[1].Ωs[i], λ0, fs, SW, ν_0ppm, fig_num;
+    a_ref = As[1].αs[i],
+    F_ref = As[1].Ωs[i],
+    title_string = "$(spectrometer_freq) MHz: F vs reference",
+    P_min = P_min, P_max = P_max)
+#
 fig_num = plotabsorptionlorentzians(Ds[1].αs[i], Ds[1].Ωs[i], λ0, fs, SW, ν_0ppm, fig_num;
     a_ref = Bs[1].αs[i],
     F_ref = Bs[1].Ωs[i],
@@ -177,6 +203,12 @@ fig_num = plotabsorptionlorentzians(Ds[1].αs[i], Ds[1].Ωs[i], λ0, fs, SW, ν_
     a_ref = Es[1].αs[i],
     F_ref = Es[1].Ωs[i],
     title_string = "$(spectrometer_freq) MHz: D vs E",
+    P_min = P_min, P_max = P_max)
+#
+fig_num = plotabsorptionlorentzians(Fs[1].αs[i], Fs[1].Ωs[i], λ0, fs, SW, ν_0ppm, fig_num;
+    a_ref = Es[1].αs[i],
+    F_ref = Es[1].Ωs[i],
+    title_string = "$(spectrometer_freq) MHz: F vs E",
     P_min = P_min, P_max = P_max)
 
 ##### some more info for option 1 (As) and option 2 (Bs).
