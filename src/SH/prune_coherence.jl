@@ -284,9 +284,9 @@ function addentriestogroups5(centers::Vector{T}, f, X::Vector{T}, radius;
                 min_val, min_ind = findmin(abs.(sum.(ys)))
 
                 if min_val < zero_tol
-                    println("centers = ", centers)
-                    println("x = ", x)
-                    println()
+                    # println("centers = ", centers)
+                    # println("x = ", x)
+                    # println()
                     assignment_inds[m] = min_ind
                 end
             #end
