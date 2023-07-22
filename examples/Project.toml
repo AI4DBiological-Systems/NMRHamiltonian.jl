@@ -1,0 +1,10 @@
+[deps]
+BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
+CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
+DataDeps = "124859b0-ceae-595e-8997-d05f6a7a8dfe"
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+Optim = "429524aa-4258-5aef-a3af-852621145aeb"
+PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
+SingleLinkagePartitions = "f8439c9b-f421-4171-88a6-2fea72ebf919"
+Tar = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
