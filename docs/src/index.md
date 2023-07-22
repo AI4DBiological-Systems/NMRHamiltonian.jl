@@ -195,9 +195,12 @@ getdatapath()
 NMRHamiltonian has the Mozilla Public License Version 2.0.
 
 # Authors
-Code author: Roy Chih Chung Wang devised and implemented this library.
+Code author:
+- Roy Chih Chung Wang
 
-Supervisors: Dave Campbell (Carleton University, Bank of Canada) and Miroslava Čuperlović-Culf (National Research Council of Canada).
+Supervisors:
+- Dave Campbell (Carleton University, Bank of Canada)
+- Miroslava Čuperlović-Culf (National Research Council of Canada)
 
 # Funding
 This projected was funded by the AI-for-Design Challenge Program from the National Research Council of Canada.
