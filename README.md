@@ -12,5 +12,9 @@ pkg"registry add General https://github.com/AI4DBiological-Systems/PublicJuliaRe
 pkg"add NMRHamiltonian"
 ```
 
+# Citation
+Our work is going through peer-review right now. Please cite our ChemRxiv version if you use this software.
+[https://doi.org/10.26434/chemrxiv-2023-0s196](https://doi.org/10.26434/chemrxiv-2023-0s196)
+
 # License
 See LICENSE.md for the licence.
