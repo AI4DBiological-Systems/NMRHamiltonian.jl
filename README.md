@@ -13,7 +13,7 @@ pkg"add NMRHamiltonian"
 ```
 
 # Citation
-Our work is going through peer-review right now. Please cite our ChemRxiv version if you use this software.
+Our work is undergoing peer review. Please cite our ChemRxiv version if you use this software.
 [https://doi.org/10.26434/chemrxiv-2023-0s196](https://doi.org/10.26434/chemrxiv-2023-0s196)
 
 # License
