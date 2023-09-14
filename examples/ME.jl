@@ -9,16 +9,9 @@ import NMRHamiltonian
 using DataDeps, CodecZlib, Tar
 
 using LinearAlgebra
-import PyPlot
 import JSON3
 
 import Optim
-
-
-PyPlot.close("all")
-fig_num = 1
-
-PyPlot.matplotlib["rcParams"][:update](["font.size" => 22, "font.family" => "serif"])
 
 ### user inputs.
 

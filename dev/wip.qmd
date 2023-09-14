@@ -14,9 +14,10 @@ import NMRHamiltonian
 
 using LinearAlgebra
 using FFTW
-import PyPlot
+import PythonPlot
 import JSON
 ```
+If any of the above libraries, say `XYZ`, fails to load, please install it by running `Pkg.add("XYZ")`.
 
 The following are configuration path variables. A default set of these are provided in NMRPublicData. Replace these paths with the ones on your local machine.
 ```{julia}
@@ -192,11 +193,11 @@ q = uu->evalzerophasecl1Darray(uu, a, F, λ0)
 q_U = q.(U_rad)
 
 # plot.
-PyPlot.figure(fig_num)
+PythonPlot.figure(fig_num)
 fig_num += 1
 
-PyPlot.plot(P, q_U)
-PyPlot.gca().invert_xaxis()
+PythonPlot.plot(P, q_U)
+PythonPlot.gca().invert_xaxis()
 
-PyPlot.legend()
-PyPlot.title("spectrum of $(molecule_entries[molecule_select]), spin system $(spin_system_select)")
+PythonPlot.legend()
+PythonPlot.title("spectrum of $(molecule_entries[molecule_select]), spin system $(spin_system_select)")
