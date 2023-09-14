@@ -6,7 +6,7 @@ HAM = NMRHamiltonian # so we don&#39;t need to type NMRHamiltonian. everytime we
 using DataDeps, Tar, CodecZlib
 
 using LinearAlgebra
-import PyPlot
+import PythonPlot # do Pkg.add(&quot;PythonPlot&quot;) if you&#39;re missing this library.
 
 # actual values from Bruker machines. Curated from BMRB experiments.
 function fetchsamplemachinesettings(tag)
@@ -112,9 +112,9 @@ function extractuncompress(src_path, dest_path)
 end
 
 # This was tested in a REPL environment, not a notebook environment. You might need to modify this for notebooks to get it to display the plots.
-PyPlot.close(&quot;all&quot;)
+PythonPlot.close(&quot;all&quot;)
 fig_num = 1
-PyPlot.matplotlib[&quot;rcParams&quot;][:update]([&quot;font.size&quot; =&gt; 22, &quot;font.family&quot; =&gt; &quot;serif&quot;])
+PythonPlot.matplotlib[&quot;rcParams&quot;][:update]([&quot;font.size&quot; =&gt; 22, &quot;font.family&quot; =&gt; &quot;serif&quot;])
 
 T = Float64</code></pre><p>The variable <code>molecule_entries</code> contain compound aliases. For this demo, any alias in the <code>molecule_name_mapping/select_molecules.json</code> file from <a href="https://zenodo.org/record/8174261">10.5281/zenodo.8174261</a> would work.</p><pre><code class="language-julia hljs">### user inputs.
 
@@ -220,12 +220,12 @@ q = uu-&gt;evalzerophasecl1Darray(uu, a, F, λ0)
 q_U = q.(U_rad)
 
 # plot.
-PyPlot.figure(fig_num)
+PythonPlot.figure(fig_num)
 fig_num += 1
 
-PyPlot.plot(P, real.(q_U))
-PyPlot.gca().invert_xaxis()
+PythonPlot.plot(P, real.(q_U))
+PythonPlot.gca().invert_xaxis()
 
-PyPlot.ylabel(&quot;real part&quot;)
-#PyPlot.legend()
-PyPlot.title(&quot;spectrum of $(molecule_entries[molecule_select]), spin system $(spin_system_select)&quot;)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../api/">« Public API</a><a class="docs-footer-nextpage" href="../return_vars/">Demo: return variables »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Tuesday 1 August 2023 13:21">Tuesday 1 August 2023</span>. Using Julia version 1.9.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+PythonPlot.ylabel(&quot;real part&quot;)
+#PythonPlot.legend()
+PythonPlot.title(&quot;spectrum of $(molecule_entries[molecule_select]), spin system $(spin_system_select)&quot;)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../api/">« Public API</a><a class="docs-footer-nextpage" href="../return_vars/">Demo: return variables »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Thursday 14 September 2023 22:32">Thursday 14 September 2023</span>. Using Julia version 1.9.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
