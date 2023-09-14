@@ -9,7 +9,7 @@ import NMRHamiltonian
 using DataDeps, CodecZlib, Tar
 
 using LinearAlgebra
-import PyPlot
+import PythonPlot # do Pkg.add("PythonPlot") if this is missing.
 #import JSON3
 
 #import Optim
@@ -17,10 +17,10 @@ import PyPlot
 
 include("./helpers/utils.jl")
 
-PyPlot.close("all")
+PythonPlot.close("all")
 fig_num = 1
 
-PyPlot.matplotlib["rcParams"][:update](["font.size" => 22, "font.family" => "serif"])
+#PythonPlot.matplotlib["rcParams"][:update](["font.size" => 22, "font.family" => "serif"])
 
 T = Float64
 
@@ -206,15 +206,15 @@ q = uu->evalzerophasecl1Darray(uu, a, F, λ0)
 q_U = q.(U_rad)
 
 # plot.
-PyPlot.figure(fig_num)
+PythonPlot.figure(fig_num)
 fig_num += 1
 
-PyPlot.plot(P, real.(q_U))
-PyPlot.gca().invert_xaxis()
+PythonPlot.plot(P, real.(q_U))
+PythonPlot.gca().invert_xaxis()
 
-PyPlot.ylabel("real part")
-#PyPlot.legend()
-PyPlot.title("spectrum of $(molecule_entries[molecule_select]), spin system $(spin_system_select)")
+PythonPlot.ylabel("real part")
+#PythonPlot.legend()
+PythonPlot.title("spectrum of $(molecule_entries[molecule_select]), spin system $(spin_system_select)")
 
 
 

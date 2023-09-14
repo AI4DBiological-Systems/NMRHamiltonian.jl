@@ -9,13 +9,13 @@ import NMRHamiltonian
 using DataDeps, CodecZlib, Tar
 
 using LinearAlgebra
-import PyPlot
+import PythonPlot
 import JSON3
 
-PyPlot.close("all")
+PythonPlot.close("all")
 fig_num = 1
 
-PyPlot.matplotlib["rcParams"][:update](["font.size" => 22, "font.family" => "serif"])
+# PythonPlot.matplotlib["rcParams"][:update](["font.size" => 22, "font.family" => "serif"])
 
 #### user inputs.
 
