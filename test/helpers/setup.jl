@@ -5,7 +5,7 @@ function setupSH(
     H_params_path,
     molecule_mapping_file_path;
     machine_settings_tag = "700",
-    γ_base = 0.01, # larger means less parts in the partition.
+    γ_base = 0.1, # larger means less parts in the partition.
     γ_rate = 1.1,
     max_iter_γ = 10,
     length_scale_base = 10.0,

@@ -252,46 +252,7 @@ function generateconfigs(
         coherence_tol = config.coherence_tol,
         relative_α_threshold = config.relative_α_threshold,
     )
-    # mixture_parts_params = defaultmixturepartitionsparameters(
-    #     cs_sys_mixture,
-    #     zero(T), # any finite value would work here.
-    # )
-    # # if loading from file.
-    # file_filder = "./configs"
-    # mixture_sh_config = loadmixtureshsconfig(
-    #     cs_sys_mixture,
-    #     joinpath(file_folder, "mixture_SH.json"),
-    #     molecule_entries,
-    #     Float64,
-    # )
-    # mixture_parts_params = loadmixturepartitionsparameters(
-    #     cs_sys_mixture,
-    #     joinpath(file_folder, "mixture_partition.json"),
-    #     molecule_entries,
-    #     2.0
-    # )
-
-    # constantknnfunc, constantradiusfunc, θs, γs = setupconstantparameteroptions(
-    #     molecule_entries,
-    #     mixture_parts_params,
-    # )
-
-    # getgraphconfigfunc can be one of the following.:
-    #   - defaultknnsearchconfig
-    #   - defaultknnconfig
-    #   - defaultradiusconfig
-    #   - defaultradiussearchconfig
-    #   - constantknnfunc
-    #   - constantradiusfunc
-
-
-    # searchknnconfigfunc = (nn, ii, cc, aa)->defaultknnsearchconfig(
-    #     nn, ii, cc, aa;
-    #     verbose = true,
-    #     start_knn = max(starting_manual_knn, round(Int, length(cc)*0.05)),
-    #     max_knn = max(starting_manual_knn, round(Int, length(cc)*0.2)),
-    #     max_connected_components_offset  = max_connected_components_offset,
-    # )
+   
     searchknnconfigfunc = defaultknnsearchconfig
     if config.fully_connected_convex_clustering
         searchknnconfigfunc = (nn, ii, cc, aa)->defaultknnsearchconfig(

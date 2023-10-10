@@ -477,15 +477,21 @@ function createsearchγconfigs(
     γ_base::T = convert(T, 0.1),
     γ_rate::T = convert(T, 1.05),
     max_iter_γ::Int = 100,
-    getγfunc::Function = nn::Int->convert(T, evalgeometricsequence(nn-1, γ_base, γ_rate)),
+    #getγfunc::Function = nn::Int->convert(T, evalgeometricsequence(nn-1, γ_base, γ_rate)),
     max_partition_size_offset::Integer = 3, # set to large number to force max_partition_size to be length(Δc_m), i.e., every part is a singleton, i.e. every resonance component is in its own resonance group.
     partition_rate::Real = 2.0, # only used when max_partition_size_offset is 0. Above 1 means more than the dimension of a Δc vector, below 1 means less than the dimension.
-    # verbose::Bool = false,
     )where T <: AbstractFloat
 
     # stop searching once the size of the returned partition is less than `max_partition_size`.
     @assert !isempty(Δc_m)
-    D = length(first(Δc_m))
+    
+    D = length(Δc_m[begin])
+    
+    getγfunc::Function = nn->getmultidimσ(
+        evalgeometricsequence(nn-1, γ_base, γ_rate)/3, # γ_base is treated as a standard deviation for 1D distance, we div 3 to get 3 sigma tolerance.
+        D,
+    )
+    #getγfunc::Function = nn::Int->convert(T, evalgeometricsequence(nn-1, γ_base, γ_rate)),
 
     # assume manual as default.
     max_partition_size::Int = clamp( D + max_partition_size_offset, 1, length(Δc_m) ) # TODO make sure this guard is set for all max_partition_size variables in the package.
@@ -498,6 +504,15 @@ function createsearchγconfigs(
     end
 
     return ConvexClustering.SearchγConfigType(max_iter_γ, max_partition_size, getγfunc)
+end
+
+function getmultidimσ(σ_1D::T, D::Int)::T where T
+    
+    # based on:
+    # γ^2 = D*σ_1D^2 # strive to get the D-dim distance with the given 1D length.
+    
+    γ = sqrt(D*σ_1D^2)
+    return γ
 end
 
 # build graph using knn, ignore radius.
