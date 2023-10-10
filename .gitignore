@@ -27,3 +27,6 @@ Manifest.toml
 
 .vscode
 docs_src/qmd/.ipynb_checkpoints
+
+/examples/test.bson
+/examples/test.json
