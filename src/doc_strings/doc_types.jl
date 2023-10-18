@@ -95,23 +95,23 @@ The 0 ppm reference frequency, in Hz. An example value is around 10656.01 Hz for
 
 ################# SHsConfigType
 
-DOCSTRING_coherence_tol(T, show_type = true) = """
-$(show_type ? "`::$(T)`" : "")
+# DOCSTRING_coherence_tol(T, show_type = true) = """
+# $(show_type ? "`::$(T)`" : "")
 
-Must be a positive number, as it is a proximity tolerance. Resonance components that doesn't numerically match the -1 quantum coherence condition but falls within this tolerance are kept in the simulation. Larger tolerances produce more resonance components. A value of `0.01` worked well for internal testing of `NMRHamiltonian`.
-"""
+# Must be a positive number, as it is a proximity tolerance. Resonance components that doesn't numerically match the -1 quantum coherence condition but falls within this tolerance are kept in the simulation. Larger tolerances produce more resonance components. A value of `0.01` worked well for internal testing of `NMRHamiltonian`.
+# """
 
-DOCSTRING_relative_α_threshold(T, show_type = true) = """
-$(show_type ? "`::$(T)`" : "")
+# DOCSTRING_relative_α_threshold(T, show_type = true) = """
+# $(show_type ? "`::$(T)`" : "")
 
-This should be between 0 and 1. A value of `0.01` means the resonance components that have an intensity less than 0.01 times the maximum intensity in the spin system would be discarded. Larger values means less resonance components are kept.
-"""
+# This should be between 0 and 1. A value of `0.01` means the resonance components that have an intensity less than 0.01 times the maximum intensity in the spin system would be discarded. Larger values means less resonance components are kept.
+# """
 
-DOCSTRING_normalize_α(show_type = true) = """
-$(show_type ? "`::Bool`" : "")
+# DOCSTRING_normalize_α(show_type = true) = """
+# $(show_type ? "`::Bool`" : "")
 
-whether to normalize the intensities of each spin system such that their sum (before discarding via `relative_α_threshold`) adds up to the number of nuclei in the spin system.
-"""
+# whether to normalize the intensities of each spin system such that their sum (before discarding via `relative_α_threshold`) adds up to the number of nuclei in the spin system.
+# """
 
 
 ################## PhysicalParamsType

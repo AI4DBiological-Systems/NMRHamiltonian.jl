@@ -1,45 +1,7 @@
 
 
 
-function fetchsamplemachinesettings(tag)
 
-    fs = 14005.602240896402
-    SW = 20.0041938620844
-    ν_0ppm = 10656.011933076665
-
-    if tag == "700"
-        # machine values taken from the BMRB 700 MHz 20 mM glucose experiment.
-        fs = 14005.602240896402
-        SW = 20.0041938620844
-        ν_0ppm = 10656.011933076665
-
-    elseif tag == "600"
-        ## machine values from a 600 MHz experiment: bmse000915, methionine.
-        fs = 9615.38461538462
-        SW = 16.022093454391
-        ν_0ppm = 6685.791496181313
-
-    elseif tag == "900"
-        ## machine values from a 900 MHz experiment: GISSMO, leucine entry.
-        fs = 14423.0769230769
-        SW = 16.0300195009073
-        ν_0ppm = 10160.027322585376
-
-    elseif tag == "500"
-        fs = 6493.50649350649
-        SW = 12.9911090156122
-        ν_0ppm = 4035.6644246816795
-
-    elseif tag == "400"
-
-        ### 400 MHz, bmse000297, ethanol.
-        fs = 4807.69230769231
-        SW = 12.0152693165838
-        ν_0ppm = 2884.905244600881
-    end
-
-    return fs, SW, ν_0ppm
-end
 
 
 function combinevectors(x::Vector{Vector{T}})::Vector{T} where T

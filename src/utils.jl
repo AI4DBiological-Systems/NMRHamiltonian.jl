@@ -1,6 +1,24 @@
 
 
 ####### generic utils.
+
+# consider deprecating this, and use collect( Iterators.flatten() )
+# won't deprecate now since combinevectors(x) is still more efficient.
+# julia> @btime HAM.combinevectors($a);
+#   190.265 ns (1 allocation: 176 bytes)
+
+# julia> @btime collect(Iterators.flatten($a));
+#   214.844 ns (3 allocations: 480 bytes)
+
+# julia> @btime collect(Iterators.flatten($a));
+#   219.786 ns (3 allocations: 480 bytes)
+
+# julia> @btime HAM.testfunc($a);
+#   365.442 ns (3 allocations: 480 bytes)
+
+# julia> @btime HAM.testfunc($a);
+#   353.614 ns (3 allocations: 480 bytes)
+
 function combinevectors(x::Vector{Vector{T}})::Vector{T} where T
 
     if isempty(x)
@@ -23,13 +41,18 @@ function combinevectors(x::Vector{Vector{T}})::Vector{T} where T
     return y
 end
 
-function isnumericallyclose(x::T, y::T, tol = eps(T)*2) where T
-    if abs(x-y) < tol
-        return true
-    end
+# # used as comparison for performance benchmarking combinevectors().
+# function testfunc(x::Vector{Vector{T}})::Vector{T} where T
+#     return collect( Iterators.flatten(x) )
+# end
 
-    return false
-end
+# function isnumericallyclose(x::T, y::T; tol::T = eps(T)*2) where T
+#     if abs(x-y) < tol
+#         return true
+#     end
+
+#     return false
+# end
 
 """
     convertcompactdomain(x::T, a::T, b::T, c::T, d::T)::T

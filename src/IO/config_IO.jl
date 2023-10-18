@@ -2,25 +2,25 @@
 
 # not type stable.
 # args[k] much be a Vector of length(labels).
-function assembledict(names::Vector{NT},
+function assembledict(molecule_entries::Vector{NT},
     labels::Vector{LT},
     args...) where {NT,LT}
 
     N_labels = length(labels)
     @assert length(args) == N_labels # future: add error message.
 
-    N_entries = length(names)
+    N_entries = length(molecule_entries)
     for j in eachindex(args)
         @assert length(args[j]) == N_entries # future: add error message.
     end
 
     dict_out = Dict()
 
-    for n in eachindex(names)
-        dict_out[names[n]] = Dict()
+    for n in eachindex(molecule_entries)
+        dict_out[molecule_entries[n]] = Dict()
 
         for j in eachindex(labels)
-            merge!(dict_out[names[n]], Dict(labels[j] => args[j][n]))
+            merge!(dict_out[molecule_entries[n]], Dict(labels[j] => args[j][n]))
         end
     end
 

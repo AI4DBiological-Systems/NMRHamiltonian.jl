@@ -53,7 +53,7 @@ end
 
 function roundtripJSON(
     As::Vector{NMRHamiltonian.SHType{T}};
-    zero_tol = 1e-12,
+    zero_tol::T = convert(T, 1e-12),
     ) where T <: AbstractFloat
 
     file_name = "test.json"
@@ -78,12 +78,15 @@ function roundtripJSON(
         end
     end
 
+    # remove filename.
+    rm(file_name)
+
     return nothing
 end
 
 function roundtripBSON(
     As::Vector{NMRHamiltonian.SHType{T}};
-    zero_tol = 1e-12,
+    zero_tol::T = convert(T, 1e-12),
     ) where T <: AbstractFloat
 
     file_name = "test.bson"
@@ -106,6 +109,9 @@ function roundtripBSON(
         end
     end
 
+    # remove filename.
+    rm(file_name)
+
     return nothing
 end
 
@@ -113,7 +119,7 @@ end
 function roundtripJSON(
     Phys::Vector{NMRHamiltonian.PhysicalParamsType{T}},
     molecule_entries::Vector{String};
-    zero_tol = 1e-12,
+    zero_tol::T = convert(T, 1e-12),
     ) where T <: AbstractFloat
 
     S = NMRHamiltonian.serializephysicalparams(Phys, molecule_entries)
@@ -137,13 +143,16 @@ function roundtripJSON(
         end
     end
 
+    # remove filename.
+    rm(file_name)
+    
     return nothing
 end
 
 function roundtripBSON(
     Phys::Vector{NMRHamiltonian.PhysicalParamsType{T}},
     molecule_entries::Vector{String};
-    zero_tol = 1e-12,
+    zero_tol::T = convert(T, 1e-12),
     ) where T <: AbstractFloat    
 
     file_name = "test.bson"
@@ -166,5 +175,8 @@ function roundtripBSON(
         end
     end
 
+    # remove filename.
+    rm(file_name)
+    
     return nothing
 end

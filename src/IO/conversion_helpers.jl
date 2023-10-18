@@ -1,9 +1,9 @@
 """
-uniqueinds(a_in::Vector{T}; atol = 1e-6) where T
+uniqueinds(a_in::Vector{T}; atol::T = convert(T, 1e-6)) where T
 
 Returns the unique values of `a_in`, with absolute tolerance `atol`, and the indices for each unique value.
 """
-function uniqueinds(a_in::Vector{T}; atol = 1e-6) where T
+function uniqueinds(a_in::Vector{T}; atol::T = convert(T, 1e-6)) where T <: AbstractFloat
 
     if length(a_in) < 2
         inds = Vector{Vector{Int}}(undef, length(a_in))
@@ -78,11 +78,11 @@ function getpairs(inds::Vector{T}) where T
 end
 
 """
-isallsame(a::Vector{T}; atol::T = 1e-6) where T
+isallsame(a::Vector{T}; atol::T = convert(T, 1e-6)) where T
 
 returns true if the entries in `a` are all within an abolute tolerance of `atol`.
 """
-function isallsame(a::Vector{T}; atol::T = 1e-6) where T
+function isallsame(a::Vector{T}; atol::T = convert(T, 1e-6)) where T
     if length(findall(xx->isapprox(a[1], xx; atol = atol), a)) == length(a)
         return true
     end

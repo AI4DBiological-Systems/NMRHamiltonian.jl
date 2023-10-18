@@ -315,3 +315,203 @@ function extractMEnuclei(Phys::Vector{PhysicalParamsType{T}}) where T
 
     return IDs, cs, entry_IDs
 end
+
+########################## Phys IO front_end
+
+
+## initialialization routines.
+
+
+"""
+```
+extractcs(Phys::Vector{PhysicalParamsType{T}}) where T
+```
+
+Assemble the J-coupling and chemical shift values from JSON files for the specified molecules.
+
+Construction functions for molecule mixture-related configurations in NMRHamiltonian.jl depend on a provided list of the number of spin systems and singlets for each molecule. The constructor functions can be inferred this information from the output quantities of this function.
+
+### Inputs
+
+- `Phys`$(DOCSTRING_Phys("T"))
+
+### Outputs
+
+- `cs_sys_mixture:`$(DOCSTRING_cs_sys_mixture("T"))
+
+- `cs_singlets_mixture`$(DOCSTRING_cs_singlets_mixture("T"))
+
+"""
+function extractcs(Phys::Vector{PhysicalParamsType{T}}) where T
+    #
+    cs_sys_mixture = collect( Phys[n].cs_sys for n in eachindex(Phys) )
+    cs_singlets_mixture = collect( Phys[n].cs_singlets for n in eachindex(Phys) )
+
+    return cs_sys_mixture, cs_singlets_mixture
+end
+
+
+
+
+#### load.
+"""
+```
+getphysicalparameters(
+    ::Type{T},
+    target_entries::Vector{String},
+    H_params_path::String,
+    molecule_mapping_file_path;
+    unique_cs_atol::T = convert(T, 1e-6),
+) where T <: AbstractFloat
+```
+
+Assemble the J-coupling and chemical shift values from JSON files for the specified molecules.
+
+### Nomenclature
+
+One set of J-coupling and one set of chemical shift values for a molecule is what NMRHamiltonian.jl calls a molecule entry.
+
+It is common to see different J-coupling values of the same molecule reported in literature for similar experimental conditions.  NMRHamiltonian.jl requires one to record each instance as separate molecule entry.
+
+Every molecule entry is recorded as a separate JSON file with some arbitrary file name the data collector wants to use. An additional name-mapping JSON file is needed to translate what the NMRHamiltonian.jl user wants to label the entries to what is the data collector chose to name the JSON files. The name-mapping JSON file is likely to require manual set up.
+
+### Inputs
+
+- `::Type{T}`       -- The `AbstractFloat` datatype to use for storing floating-point data. A viable input here is `Float64`, which specifies double precision floating-point numbers are to be used.
+- `target_entries`  -- list of molecule entry names.
+- `H_params_path`   -- path to the directory that contain the J-coupling and chemical shift JSON files. Each file corresponds to one entry of a molecule, and has a set of chemical shifts and J-coupling information in the JSON dictionary format.
+    `ID1` and `ID2` are JSON dictionary keys that specify the spin nucleus label for J-coupling values, and `ID` is the nucleus label for chemical shift values. The following is an example of the JSON format for a L-Histidine entry:
+```
+{
+       "J-coupling": [
+                       {
+                            "ID2": 13,
+                            "ID1": 12,
+                          "value": -15.350518
+                       },
+                       {
+                            "ID2": 16,
+                            "ID1": 12,
+                          "value": 7.63377
+                       },
+                       {
+                            "ID2": 16,
+                            "ID1": 13,
+                          "value": 5.029267
+                       }
+                     ],
+   "chemical shift": [
+                       {
+                          "value": 3.18747,
+                             "ID": 12
+                       },
+                       {
+                          "value": 3.26837,
+                             "ID": 13
+                       },
+                       {
+                          "value": 7.14078,
+                             "ID": 14
+                       },
+                       {
+                          "value": 8.02487,
+                             "ID": 15
+                       },
+                       {
+                          "value": 3.9967,
+                             "ID": 16
+                       }
+                     ]
+}
+```
+
+- `molecule_mapping_file_path`   -- the files in `H_params_path` might not be named in a manner for the user to know which molecule entry corresponds to which JSON file. Therefore, the user should further define a single JSON file that encodes this mapping.
+    Example: if the file `bmse000976_simulation_1.json` corresponds to the molecule entry "L-Histidine" and the file `Histidine_Govindaraju_2000.json` corresponds to the molecule entry "L-Histidine - Govindaraju", and suppose the user only wants to target these two entries, i.e. `target_entries` contain only these two entries. Then the following entry-filename-mapping JSON file should be used, and `molecule_mapping_file_path` should be the path to this entry-filename-mapping file.
+```
+{
+    "L-Histidine": {
+        "notes": "http://gissmo.bmrb.io/entry/bmse000976/simulation_1",
+       "file name": "bmse000976_simulation_1.json"
+    },
+    "L-Histidine - Govindaraju": {
+        "notes": "https://pubmed.ncbi.nlm.nih.gov/10861994/",
+       "file name": "Histidine_Govindaraju_2000.json"
+    }
+}
+```
+
+### Optional inputs
+
+- `unique_cs_atol`   -- Two chemical shift values in the same JSON file are assigned the same chemical shift value to both nuclei if the two values in the file are less than `unique_cs_atol`.
+
+### Outputs
+
+- `Phys::Vector{PhysicalParamsType{Float64}`    -- list of the data type `PhysicalParamsType` that contain chemical shift and J-coupling information for each of the molecule entries in `target_entries`.
+
+- `dict_molecule_to_filename`                   -- the dictionary that maps molecule entries to meta information such as their corresponding JSON filenames
+
+"""
+function getphysicalparameters(
+    ::Type{T},
+    target_entries::Vector{String},
+    H_params_path::String,
+    molecule_mapping_file_path;
+    unique_cs_atol::T = convert(T, 1e-6),
+    ) where T <: AbstractFloat
+    
+    load_paths, dict_molecule_to_filename = getloadpaths(target_entries, H_params_path, molecule_mapping_file_path)
+
+    return getphysicalparameters(
+        T,
+        load_paths;
+        unique_cs_atol = unique_cs_atol,
+        )
+end
+
+function getphysicalparameters(
+    ::Type{T},
+    load_paths::Vector{String};
+    unique_cs_atol::T = convert(T, 1e-6),
+    ) where T <: AbstractFloat
+
+    Phys = Vector{PhysicalParamsType{T}}(undef, length(load_paths))
+
+    for n in eachindex(load_paths)
+        H_IDs, H_css, J_IDs, J_vals = loadcouplinginfojson(T, load_paths[n])
+
+        J_inds_sys, J_inds_sys_local, J_IDs_sys, J_vals_sys, H_inds_sys,
+            cs_sys, H_inds_singlets, cs_singlets, H_inds, J_inds,
+            g = setupcsJ(H_IDs, H_css, J_IDs, J_vals)
+
+        ME, _ = getmageqinfo(H_IDs, H_css, J_IDs, J_vals; unique_cs_atol = unique_cs_atol)
+
+        Phys[n] = PhysicalParamsType(H_IDs, H_inds_sys, cs_sys,
+            H_inds_singlets, cs_singlets, J_inds_sys, J_inds_sys_local,
+            J_vals_sys, ME)
+    end
+
+    return Phys
+end
+
+function getloadpaths(
+    target_entries::Vector{String},
+    H_params_path::String,
+    molecule_mapping_file_path::String
+    )
+
+    dict_molecule_to_filename = JSON3.read(read(molecule_mapping_file_path)) # map molecule entries to coupling information file names.
+
+    N_molecules = length(target_entries)
+    load_paths = Vector{String}(undef, N_molecules)
+
+    file_name_symbol = Symbol("file name")
+
+    for n in eachindex(load_paths)
+
+        ## if all keys to dictionary were type `Symbol`.
+        name_key = Symbol(target_entries[n])
+        load_paths[n] = joinpath(H_params_path, dict_molecule_to_filename[name_key][file_name_symbol])
+    end
+
+    return load_paths, dict_molecule_to_filename
+end

@@ -3,38 +3,49 @@
 # molecule (multiple spin systems).
 """
 ```
-mutable struct SHsConfigType{T<:AbstractFloat}
-- coherence_tols::Vector{T}
-- relative_α_thresholds::Vector{T}
-- normalize_αs::Vector{Bool}
+@kwdef struct SHConfig{T <: Real}
+    coherence_tol::T = convert(T, 0.01)
+    relative_α_threshold::T = convert(T, 0.005)
+    tol_radius_1D::T = convert(T, 0.1) # 
+    nuc_factor::T = convert(T, 1.5)
+    normalize_αs::Bool = true
+end
 ```
 
 Configuration settings for the spin Hamiltonian simulation portion of `simulate()`.
 
+The parameters here control the trade-off between the number of coherence difference features, the set of Δc's, and the number of resonance groups, the set of Δc_bar's, that are generated.
+The more resonance groups, the better the approximation to the ideal model where each Δc is a resonance group.
+The resultant model becomes more computationally intensive as the number of resonance groups increase.
+
 ≡≡≡≡≡≡≡≡ Details ≡≡≡≡≡≡≡≡
 
-### `coherence_tols::Vector{T}`
-List of `coherence_tol` values, one for each spin system.
+### `coherence_tol::T`
+This controls the number of Δc features we get, by how far their sum deviate from `-1`.
 
-- `coherence_tols`$(DOCSTRING_coherence_tol("T"))
+### `relative_α_threshold::T`
+This controls the number of Δc feature we get, by how intense their corresponding resonance intensity is relative to the maximum intensity within their local spin system.
 
-### `relative_α_thresholds::Vector{Vector{T}}`
-List of `relative_α_threshold` values, one for each spin system. 
+### `normalize_αs::Bool`
+Whether or not to normalize the resonance intensities according to the number of nuclei in the spin system. It is recommended to leave this to `true` during normal operation.
 
-- `relative_α_threshold`$(DOCSTRING_relative_α_threshold("T"))
+### `tol_radius_1D::T`
+An approximate tolerance for merging similar coherence difference features together, when generating resonance groups.
+Should be strictly between 0 and 1. The lower the number, the more resonance groups are generated.
 
-### `normalize_αs::Vector{Bool}`
-List of `normalize_α` values, one for each spin system.
-
-- `normalize_α`$(DOCSTRING_normalize_α(false))
+### `nuc_factor::T`
+A guard to prevent too few resoannce groups, unless the coherence difference features, the set of Δc's, are very similar.
+This should be strictly above 1. The higher this number, the more resonance groups are generated. 
 
 """
-mutable struct SHsConfigType{T<:AbstractFloat}
-    coherence_tols::Vector{T}
-    relative_α_thresholds::Vector{T}
-    normalize_αs::Vector{Bool} # not using BitArray since the IO to structure function is only tested against nested Vector{}.
-end
+@kwdef struct SHConfig{T <: Real}
 
+    coherence_tol::T = convert(T, 0.01)
+    relative_α_threshold::T = convert(T, 0.005)
+    tol_radius_1D::T = convert(T, 0.1) # strictly between 0 and 1. The lower, the better the approximation, but would a larger partition (i.e. more resonance groups).
+    nuc_factor::T = convert(T, 1.5)
+    normalize_αs::Bool = true
+end
 
 # multiple spin systems. Partition
 """

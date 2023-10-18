@@ -276,3 +276,5 @@ W = BSON.load(file_name)
 ```
 
 A round-trip test routine is in the `test` folder of the NMRHamiltonian repository. See the functions `roundtripJSON()` and `roundtripBSON()` in that folder for more details on the test.
+
+An alternative method to serialize data is with the Julia Base `Serialization` library. My understanding is that compatibility is not guaranteed between Julia versions, so it should be used for short-term storage.

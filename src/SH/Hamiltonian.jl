@@ -1,3 +1,4 @@
+# TODO: explicit devectorize for speed for all methods in this script.
 
 function getgenericHamiltoniantest( Id,
     Ix,
@@ -11,6 +12,7 @@ function getgenericHamiltoniantest( Id,
     N_couplings = length(J_vals)
     @assert N_couplings == length(J_inds)
 
+    two_pi_T = convert(T, 2*π)
 
     # pair-wise terms.
     H1 = zeros(T, 2^N, 2^N)
@@ -19,7 +21,16 @@ function getgenericHamiltoniantest( Id,
         j = J_inds[i][1]
         k = J_inds[i][2]
 
-        H1 += getmultiIjIk(Id, Ix, Iy_no_im, Iz, j, k, N, 2*π*J_vals[i])
+        H1 += getmultiIjIk(
+            Id,
+            Ix,
+            Iy_no_im,
+            Iz,
+            j,
+            k,
+            N,
+            two_pi_T*J_vals[i],
+        )
     end
 
     # single terms.
@@ -39,13 +50,23 @@ function getgenericHamiltoniantest( Id,
     N = length(ω0)
     @assert size(J,1) == size(J,2) == N
 
+    two_pi_T = convert(T, 2*π)
 
     # pair-wise terms.
     H1 = zeros(T, 2^N, 2^N)
     for j = 1:N
         for k = j+1:N
             #H += (2*π*J[j,k]) .* getmultiIjIk(Id, Ix, Iy_no_im, Iz, j, k, N)
-            H1 += getmultiIjIk(Id, Ix, Iy_no_im, Iz, j, k, N, 2*π*J[j,k])
+            H1 += getmultiIjIk(
+                Id,
+                Ix,
+                Iy_no_im,
+                Iz,
+                j,
+                k,
+                N,
+                two_pi_T*J[j,k],
+            )
 
         end
     end
@@ -69,13 +90,23 @@ function getgenericHamiltonian( Id,
     N = length(ω0)
     @assert size(J,1) == size(J,2) == N
 
+    two_pi_T = convert(T, 2*π)
 
     # pair-wise terms.
     H = zeros(T, 2^N, 2^N)
     for j = 1:N
         for k = j+1:N
             #H += (2*π*J[j,k]) .* getmultiIjIk(Id, Ix, Iy_no_im, Iz, j, k, N)
-            H += getmultiIjIk(Id, Ix, Iy_no_im, Iz, j, k, N, 2*π*J[j,k])
+            H += getmultiIjIk(
+                Id,
+                Ix,
+                Iy_no_im,
+                Iz,
+                j,
+                k,
+                N,
+                two_pi_T*J[j,k],
+            )
 
         end
     end
@@ -98,13 +129,14 @@ function getgenericHamiltonian0( Id,
     N = length(ω0)
     @assert size(J,1) == size(J,2) == N
 
-    H = zeros(T, 2^N, 2^N)
+    two_pi_T = convert(T, 2*π)
 
+    H = zeros(T, 2^N, 2^N)
     for j = 1:N
         H += ω0[j] .* getmultiIz(Id, j, N)
 
         for k = j+1:N
-            H += (2*π*J[j,k]) .* getmultiIjIk0(Id, Ix, Iy_no_im, Iz, j, k, N)
+            H += (two_pi_T*J[j,k]) .* getmultiIjIk0(Id, Ix, Iy_no_im, Iz, j, k, N)
         end
     end
 
@@ -183,7 +215,7 @@ function getgenericHamiltonian( Id,
 end
 
 # v must be an eigen vector of Iz. This routine does not verify this condition.
-function getzangularmomentum(v::Vector{T}, Iz; tol = 1e-7)::T where T
+function getzangularmomentum(v::Vector{T}, Iz)::T where T
     
     b = Iz*v
     m = dot(b,v)/dot(v,v)
@@ -239,7 +271,7 @@ function getaΩ(
     H::Matrix{T},
     Iys_no_im_full,
     Ix_full;
-    tol = 1e-7,
+    tol::T = convert(T, 1e-7),
     ) where T <: AbstractFloat
 
     M = size(H,1)
@@ -273,8 +305,7 @@ function getaΩ(
     #     for s = 1:M
     for (r,s) in Base.Iterators.product(1:M,1:M)
 
-        #if Utilities.isnumericallyclose(p[r,s], -one(T), tol)
-        if isnumericallyclose(round(p[r,s]), -one(T), tol)
+        if isapprox(round(p[r,s]), -one(T); atol = tol)
             #println("i_out = ", i_out)
             i_out += 1
 

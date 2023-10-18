@@ -1,7 +1,9 @@
 # Demo: code walk-through
-For those who prefer working with source files instead of the Julia REPL and notebooks, this demo follows the script `examples/demo.jl`, which is derived from `examples/simulate_SH.jl` in the NMRHamiltonian repository. In this demo, we load the physical chemistry parameters and alias mapping files, then simulate the resonance frequency and intensity, followed by an application of the convex clustering to partition the resonance components into resonance groups.
+For those who prefer working with source files instead of the Julia REPL and notebooks, this demo follows the script `examples/simulate.jl`, which is derived from `examples/simulate_SH.jl` in the NMRHamiltonian repository. In this demo, we load the physical chemistry parameters and alias mapping files, then simulate the resonance frequency and intensity, followed by an application of the convex clustering to partition the resonance components into resonance groups.
 
 First, load the libraries. You can use `using` (loads NMRHamiltonian into current namespace) or `import` (loads NMRHamiltonian into its own namespace `NMRHamiltonian`). We use the latter in this demo.
+
+The code involving DataDeps, Tar, CodecZlib were developed on `DataDeps v0.7.11`, `Tar v1.10.0`, `CodecZlib v0.7.3`. You might need to modify it if you use a different version of `DataDeps`.
 
 ```julia
 import NMRHamiltonian
@@ -13,48 +15,8 @@ using DataDeps, Tar, CodecZlib
 using LinearAlgebra
 import PythonPlot # do Pkg.add("PythonPlot") if you're missing this library.
 
-# actual values from Bruker machines. Curated from BMRB experiments.
-function fetchsamplemachinesettings(tag)
-
-    fs = 14005.602240896402
-    SW = 20.0041938620844
-    ν_0ppm = 10656.011933076665
-
-    if tag == "700"
-        # machine values taken from the BMRB 700 MHz 20 mM glucose experiment.
-        fs = 14005.602240896402 # in Hz.
-        SW = 20.0041938620844 # spectral window, in ppm.
-        ν_0ppm = 10656.011933076665 # in Hz, where the zero ppm is detected in the experiment. Not used for this demo.
-
-    elseif tag == "600"
-        ## machine values from a 600 MHz experiment: bmse000915, methionine.
-        fs = 9615.38461538462
-        SW = 16.022093454391
-        ν_0ppm = 6685.791496181313
-
-    elseif tag == "900"
-        ## machine values from a 900 MHz experiment: GISSMO, leucine entry.
-        fs = 14423.0769230769
-        SW = 16.0300195009073
-        ν_0ppm = 10160.027322585376
-
-    elseif tag == "500"
-        fs = 6493.50649350649
-        SW = 12.9911090156122
-        ν_0ppm = 4035.6644246816795
-
-    elseif tag == "400"
-
-        ### 400 MHz, bmse000297, ethanol.
-        fs = 4807.69230769231
-        SW = 12.0152693165838
-        ν_0ppm = 2884.905244600881
-    end
-
-    return fs, SW, ν_0ppm
-end
-
 # the same function for ensuring the dataset at 10.5281/zenodo.8174261 is downloaded.
+
 function getdatapath()::String
 
     dataset_alias = "AI4DBiological-Systems_NMR_data" # don't use spaces or 'strange' symbols like commas, colons, etc.
@@ -98,13 +60,6 @@ function getdatapath()::String
     end
 
     return root_data_path
-
-    # # return root_data_path. however, this unpacks in the current working directory!
-    # archive_file_path = joinpath(local_dataset_archive_path, archive_file_name)
-    # if isfile(archive_file_path)
-    #     DataDeps.unpack(archive_file_path)
-    # end
-    #return local_dataset_archive_path
 end
 
 function extractuncompress(src_path, dest_path)
@@ -119,19 +74,33 @@ end
 # This was tested in a REPL environment, not a notebook environment. You might need to modify this for notebooks to get it to display the plots.
 PythonPlot.close("all")
 fig_num = 1
-PythonPlot.matplotlib["rcParams"][:update](["font.size" => 22, "font.family" => "serif"])
 
-T = Float64
+# select the AbstractFloat data type you want to use. Anything lower than Float32 will result in numerical precision-related errors in our tests.
+#T = Float64
+T = Float32
 ```
 
 The variable `molecule_entries` contain compound aliases. For this demo, any alias in the `molecule_name_mapping/select_molecules.json` file from [10.5281/zenodo.8174261](https://zenodo.org/record/8174261) would work.
 ```julia
 ### user inputs.
 
-molecule_entries = ["L-Glutamine"; "L-Valine"; "L-Phenylalanine"; "DSS"]
+molecule_entries = [
+    "L-Serine";
+    "alpha-D-Glucose";
+    "beta-D-Glucose";
+    "Ethanol";
+    "L-Methionine";     
+    "L-Phenylalanine";
+    "L-Glutathione reduced";
+    "L-Glutathione oxidized";       
+    "Uridine";
+    "L-Glutamine";
+    "L-Valine";
+    "DSS";
+]
 
 # machine values taken from the BMRB 700 MHz 20 mM glucose experiment.
-fs, SW, ν_0ppm = fetchsamplemachinesettings("700")
+fs, SW, ν_0ppm = HAM.getpresetspectrometer(T, "700")
 
 ## pull the sample coupling values into dictionary structures.
 # use DataDeps.jl and Tar.jl to download and extract the sample coupling values.
@@ -139,47 +108,42 @@ root_data_path = getdatapath() # coupling values data repository root path
 
 H_params_path = joinpath(root_data_path, "coupling_info") # folder of coupling values. # replace with your own values in actual usage.
 
-molecule_mapping_root_path = joinpath(root_data_path, "molecule_name_mapping")
-molecule_mapping_file_path = joinpath(molecule_mapping_root_path, "select_molecules.json")
+
+molecule_mapping_root_path = joinpath(
+    root_data_path,
+    "molecule_name_mapping",
+)
+molecule_mapping_file_path = joinpath(
+    molecule_mapping_root_path,
+    "select_molecules.json",
+)
 #molecule_mapping_file_path = joinpath(molecule_mapping_root_path, "GISSMO_names.json")
 
 
-# # These produce a aprtition tree over the searched γ values for many molecule entries.
-config_SH = HAM.SHConfig(
-    T;
-    coherence_tol = 0.01, # set to a small number. must be larger than zero. 0.01 seemed to work across our test simulation configurations.
-    relative_α_threshold = 0.01, # the larger it is, the more resonance components would be dropped for computation speed. However, setting it to 0 would keep every resonance component even if it had a very small intensity. 0.01 seemed to work across our test simulation configurations.
-    max_partition_size_offset = 0,
-    partition_rate = 2.0,
-    γ_base = 0.1,
-    γ_rate = 1.05,
-    max_iter_γ = 100,
-    fully_connected_convex_clustering = false, #  overides all knn-related optional inputs
-    length_scale_base = 10.0,
-    length_scale_rate = 0.7,
-    min_dynamic_range = 0.95,
-    cc_gap_tol = 1e-8, # set this much smaller than assignment_zero_tol to get partition tree, this is the stopping gradient residual of the convex clustering algorithm.
-    cc_max_iters = 300,
-    assignment_zero_tol = 1e-3,
-    report_γ_cost = true,
-    verbose_kernel = true,
+# # These produce a aprtition tree over the searched γ values for many molecule entries. Type ?help HAM.SHConfig for details.
+config_SH = HAM.SHConfig{T}(
+    coherence_tol = convert(T, 0.01),
+    relative_α_threshold = convert(T, 0.005),
+    tol_radius_1D = convert(T, 0.1), # strictly between 0 and 1. The lower, the better the approximation, but would a larger partition (i.e. more resonance groups).
+    nuc_factor = convert(T, 1.5),
 )
+
 ```
 
 Now, load the parameters, simulate the resonance components, and partition into resonance groups.
 ```julia
 # read the physical parameters from file, from via the DataDeps routine from "helpers/data.jl".
-Phys = HAM.getphysicalparameters(
-    Float64,
+Phys = NMRHamiltonian.getphysicalparameters(
+    T,
     molecule_entries,
     H_params_path,
     molecule_mapping_file_path;
-    unique_cs_atol = 1e-6,
+    unique_cs_atol = convert(T, 1e-6),
 )
 # You can tweak the J-coupling or chemical shift values of Phys manually if desired, before calling simulate(). We won't tweak anything in this demo.
 
 # Assemble and eigendecompose the Hamiltonian, get frequencies and intensities for each resonance component, and partition the comonents into resonance groups.
-As, Rs, MSPs = HAM.simulate(
+As, MSPs = HAM.simulate(
     Phys,
     molecule_entries,
     fs,
@@ -190,13 +154,21 @@ As, Rs, MSPs = HAM.simulate(
 ```
 
 Now, we'll plot the absorption Lorentzian spectrum of the simulated resonance frequencies and intensities. We'll have to make up a T2 relaxation value, which corresponds to the component width.
+
+We will focus in on the first molecule (change `molecule_select = 1` to select a different molecule, the molecule names are in `molecule_entries`) and its first spin system (change `spin_system_select = 1` to select a different spin system).
+If `T` was set to a floating-point data type other than the default one from your operating system's architecture, then you need to explicitly type-cast each floating-point number to type `T`, via `convert`. To find out what the default floating-point data type is, run `typeof(1.0)`.
+
 ```julia
 ### visualize a target molecule and spin group, given a T-2 decay parameter.
-λ0 = 3.4 # make up a T-2 decay parameter for this plotting example.
+λ0 = convert(T, 3.4) # make up a T-2 decay parameter for this plotting example.
 molecule_select = 1
 spin_system_select = 1
-ppm_offset = 0.2 # for display padding.
+ppm_offset = convert(T, 0.2) # for display padding.
 N_viz = 50000 # this many points to plot
+
+two_pi_T = convert(T, 2*π)
+
+println("Visualizing $(molecule_entries[molecule_select]) and spin system $(spin_system_select).")
 
 a = As[molecule_select].αs[spin_system_select]
 F = As[molecule_select].Ωs[spin_system_select]
@@ -204,7 +176,7 @@ F = As[molecule_select].Ωs[spin_system_select]
 hz2ppmfunc = uu->(uu - ν_0ppm)*SW/fs # Hz to ppm conversion. This is useful to remember.
 ppm2hzfunc = pp->(ν_0ppm + pp*fs/SW) # ppm to Hz conversion. This is useful to remember.
 
-ΩS_ppm = hz2ppmfunc.( F ./ (2*π) ) # convert to radial frequency.
+ΩS_ppm = hz2ppmfunc.( F ./ two_pi_T ) # convert to radial frequency.
 ΩS_ppm_sorted = sort(ΩS_ppm)
 
 u_min = ppm2hzfunc(ΩS_ppm_sorted[1] - ppm_offset)
@@ -215,7 +187,7 @@ P_max = hz2ppmfunc(u_max)
 
 P = LinRange(P_min, P_max, N_viz)
 U = ppm2hzfunc.(P)
-U_rad = U .* (2*π)
+U_rad = U .* two_pi_T
 
 # absorption Lorentzian.
 function evalzerophasecl1Darray(u_rad, αs::Vector{T}, Ωs::Vector{T}, λ::T)::Complex{T} where T <: AbstractFloat
@@ -244,9 +216,8 @@ PythonPlot.figure(fig_num)
 fig_num += 1
 
 PythonPlot.plot(P, real.(q_U))
-PythonPlot.gca().invert_xaxis()
 
+PythonPlot.gca().invert_xaxis()
 PythonPlot.ylabel("real part")
-#PythonPlot.legend()
 PythonPlot.title("spectrum of $(molecule_entries[molecule_select]), spin system $(spin_system_select)")
 ```

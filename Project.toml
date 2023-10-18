@@ -1,24 +1,23 @@
 name = "NMRHamiltonian"
 uuid = "d73005cc-2eb2-45b3-9785-29d07aec07ac"
 authors = ["Roy Chih Chung Wang"]
-version = "0.4.1"
+version = "0.5.0"
 
 [deps]
-ConvexClustering = "0437234d-b0b7-4786-9d16-5c3be1f5901d"
-Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 Kronecker = "2c470bb0-bcc8-11e8-3dad-c9649493f05e"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+SingleLinkagePartitions = "f8439c9b-f421-4171-88a6-2fea72ebf919"
 
 [compat]
-julia = "1.8"
+julia = "1.9"
 
 [extras]
 BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
+CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
 DataDeps = "124859b0-ceae-595e-8997-d05f6a7a8dfe"
 Tar = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
-CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]

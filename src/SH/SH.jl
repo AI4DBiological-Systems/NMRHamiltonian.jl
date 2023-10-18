@@ -1,14 +1,14 @@
-function prepcouplingalgorithm(N_spins::Int)
+function prepcouplingalgorithm(::Type{T}, N_spins::Int) where T <: AbstractFloat
     # for Hamiltonian.
-    Id = getsingleId()
-    Ix = getsingleIx()
-    Iy_no_im = getsingleIynoim()
-    Iz = getsingleIz()
+    Id = getsingleId(T)
+    Ix = getsingleIx(T)
+    Iy_no_im = getsingleIynoim(T)
+    Iz = getsingleIz(T)
 
     # for testing or coherence.
-    Ip = getsingleI⁺()
-    Im = getsingleI⁻()
-    Iy = getsingleIy()
+    Ip = getsingleI⁺(T)
+    Im = getsingleI⁻(T)
+    Iy = getsingleIy(T)
 
     Ims = collect( Im for j = 1:N_spins )
     Im_full = Kronecker.kroneckersum(Ims...)
@@ -26,12 +26,12 @@ function prepcouplingalgorithm(N_spins::Int)
         Im_full, Iz_full, Ix_full, Iys_no_im_full
 end
 
-function prepcouplingalgorithm(N_protons_group::Vector{Int})
+function prepcouplingalgorithm(::Type{T}, N_protons_group::Vector{Int})  where T <: AbstractFloat
     N_groups = length(N_protons_group)
 
     out_array = Vector{Any}(undef, N_groups)
     for i = 1:N_groups
-        out_array[i] = prepcouplingalgorithm(N_protons_group[i])
+        out_array[i] = prepcouplingalgorithm(T, N_protons_group[i])
     end
 
     out = tuple(out_array...)
@@ -45,14 +45,15 @@ function computeSH(
     intermediates_sys,
     ppm2hzfunc,
     cs_singlets,
-    N_spins_singlet::Vector{Int};
-    coherence_tols::Vector{T} = collect( 1e-2 for _ in eachindex(css_sys)),
-    normalize_αs::Vector{Bool} = trues(length(css_sys)), # not using BitVector since the current serialization/deserialization routine has issues with it.
+    N_spins_singlet::Vector{Int},
+    config::SHConfig;
     ) where T <: AbstractFloat
 
     N_sys = length(css_sys)
-    @assert length(J_vals_sys) == length(J_inds_sys) == N_sys == length(coherence_tols) == length(normalize_αs)
+    @assert length(J_vals_sys) == length(J_inds_sys) == N_sys
     #
+    normalize_αs, coherence_tol_1D = config.normalize_αs, config.coherence_tol
+
     
     N_singlets = length(cs_singlets)
 
@@ -77,6 +78,8 @@ function computeSH(
 
     for i = 1:N_sys
 
+        coherence_tol_i = getradius(coherence_tol_1D, length(css_sys[i]))
+
         intensities, frequencies, coherence_mat, eigenvalues, eigenvectors,
         coherence_state_pairs,
         H, H1, H2, Ms = evalSCalgorithm(
@@ -85,16 +88,16 @@ function computeSH(
             J_inds_sys[i],
             intermediates_sys[i],
             ppm2hzfunc;
-            coherence_tol = coherence_tols[i],
+            coherence_tol = coherence_tol_i,
         )
 
         # normalize intensities according to number of spins.
-        if normalize_αs[i]
+        if normalize_αs
             N_spins = length(css_sys[i])
             normalizetoNspins!(intensities, N_spins)
         end
 
-        Id = getsingleId()
+        Id = getsingleId(T)
         ms = computequantumnumbers(eigenvectors, Id)
 
         # get the unique list of all states that appear in the coherence state paris.
@@ -120,7 +123,7 @@ function computeSH(
             states,
             ms,
             Ms,
-            coherence_tols[i],
+            coherence_tol_i,
         )
     end
 
@@ -144,12 +147,14 @@ end
 # parsefunc converts low-dim p to dim(cs).
 # - It is molecule and spin group specific.
 # uses p_cs to modify cs.
-function evalSCalgorithm(  cs::Vector{T},
-                            J_vals::Vector{T},
-                            J_inds::Vector{Tuple{Int,Int}},
-                            intermediates,
-                            ppm2hzfunc;
-                            coherence_tol::T = 1e-3) where T <: AbstractFloat
+function evalSCalgorithm(  
+    cs::Vector{T},
+    J_vals::Vector{T},
+    J_inds::Vector{Tuple{Int,Int}},
+    intermediates,
+    ppm2hzfunc;
+    coherence_tol::T = convert(T, 1e-3),
+    ) where T <: AbstractFloat
 
     # set up.
     #pcstocs!(cs, p_cs, cs_LUT)
@@ -162,9 +167,13 @@ function evalSCalgorithm(  cs::Vector{T},
     #H = getgenericHamiltonian(Id, Ix, Iy_no_im, Iz, ω0, J_vals, J_inds)
     H, H1, H2 = getgenericHamiltoniantest(Id, Ix, Iy_no_im, Iz, ω0, J_vals, J_inds)
 
-    a, F, p, s, Q, coherence_labels, M_array = getaΩ(Iz_full, H,
-        Iys_no_im_full, Ix_full; tol = coherence_tol)
-    #println("hi")
+    a, F, p, s, Q, coherence_labels, M_array = getaΩ(
+        Iz_full,
+        H,
+        Iys_no_im_full,
+        Ix_full;
+        tol = coherence_tol,
+    )
 
     return a, F, p, s, Q, coherence_labels, H, H1, H2, M_array
 end
@@ -185,7 +194,7 @@ function computequantumnumbers(basis::Vector{Vector{T}}, Id) where T
 end
 
 function computequantumnumbers(A::SpinSystem{T})::Vector{Vector{T}} where T
-    Id = getsingleId()
+    Id = getsingleId(T)
     return computequantumnumbers(A.Q, Id)
 end
 

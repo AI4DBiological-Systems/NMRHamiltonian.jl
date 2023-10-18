@@ -77,9 +77,13 @@ function matchJlabels(label_pair_list::Vector{Tuple{Int,Int}}, search_list::Vect
     return inds
 end
 
-function setupcsJ(H_IDs, H_css::Vector{T}, J_IDs, J_vals;
-    unique_cs_tol = 1e-6,
-    cs_round_digits = 5) where T
+function setupcsJ(
+    H_IDs,
+    H_css::Vector{T},
+    J_IDs,
+    J_vals;
+    unique_cs_tol::T = convert(T, 1e-6),
+    ) where T
 
     H_inds = collect(1:length(H_IDs))
     J_inds = convertJIDstoJinds(J_IDs, H_IDs)

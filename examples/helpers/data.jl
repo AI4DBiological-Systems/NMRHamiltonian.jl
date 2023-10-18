@@ -42,13 +42,6 @@ function getdatapath()::String
     end
 
     return root_data_path
-
-    # # return root_data_path. however, this unpacks in the current working directory!
-    # archive_file_path = joinpath(local_dataset_archive_path, archive_file_name)
-    # if isfile(archive_file_path)
-    #     DataDeps.unpack(archive_file_path)
-    # end
-    #return local_dataset_archive_path
 end
 
 function extractuncompress(src_path, dest_path)

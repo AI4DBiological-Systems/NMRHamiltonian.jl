@@ -306,7 +306,7 @@ end
 
 function checkcoherences(
     MSPs::Vector{MoleculeSpinSystem{T}};
-    coherence_sum_zero_tol::Real = 1e-14,
+    coherence_sum_zero_tol::T = convert(T, 1e-14),
     ) where T
 
     for n in eachindex(MSPs)

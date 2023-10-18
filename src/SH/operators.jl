@@ -2,40 +2,40 @@
 #   in Zeeman basis.
 
 ### for understanding.
-function getsingleI⁺()::Matrix{Float64}
-    return [0 1; 0 0]
+function getsingleI⁺(::Type{T})::Matrix{T} where T <: AbstractFloat
+    return convert(Matrix{T}, [0 1; 0 0])
 end
 
-function getsingleI⁻()::Matrix{Float64}
-    return [0 0; 1 0]
+function getsingleI⁻(::Type{T})::Matrix{T} where T <: AbstractFloat
+    return convert(Matrix{T}, [0 0; 1 0])
 end
 
-function getsingleIy()::Matrix{Complex{Float64}}
-    return 1/(2*im) .* [0 1; -1 0]
+function getsingleIy(::Type{T})::Matrix{Complex{T}} where T <: AbstractFloat
+    return convert(Matrix{Complex{T}}, 1/(2*im) .* [0 1; -1 0])
 end
 
-function getsinglehalfId()::Matrix{Float64}
-    return 0.5 .* [1 0; 0 1]
-end
+# function getsinglehalfId(::Type{T})::Matrix{T} where T <: AbstractFloat
+#     return convert(Matrix{T}, 0.5 .* [1 0; 0 1])
+# end
 
 
 
 ### actual use.
 
-function getsingleIx()::Matrix{Float64}
-    return 0.5 .* [0 1; 1 0]
+function getsingleIx(::Type{T})::Matrix{T} where T <: AbstractFloat
+    return convert(Matrix{T}, 0.5 .* [0 1; 1 0])
 end
 
-function getsingleIynoim()::Matrix{Float64}
-    return 0.5 .* [0 1; -1 0]
+function getsingleIynoim(::Type{T})::Matrix{T} where T <: AbstractFloat
+    return convert(Matrix{T}, 0.5 .* [0 1; -1 0])
 end
 
-function getsingleIz()::Matrix{Float64}
-    return 0.5 .* [1 0; 0 -1]
+function getsingleIz(::Type{T})::Matrix{T} where T <: AbstractFloat
+    return convert(Matrix{T}, 0.5 .* [1 0; 0 -1])
 end
 
-function getsingleId()::Matrix{Float64}
-    return [1 0; 0 1]
+function getsingleId(::Type{T})::Matrix{T} where T <: AbstractFloat
+    return convert(Matrix{T}, [1 0; 0 1])
 end
 
 
@@ -51,7 +51,7 @@ function getmultiIz(   Id::Matrix{T},
     operators = Vector{Matrix{T}}(undef, N)
     fill!(operators, Id)
 
-    operators[j] = getsingleIz()
+    operators[j] = getsingleIz(T)
 
     # get product operator.
     #out = 2^(N-1) .* Kronecker.kronecker(operators...)
@@ -60,14 +60,16 @@ function getmultiIz(   Id::Matrix{T},
     return out
 end
 
-function getmultiIjIk(   Id,
-                        Ix,
-                        Iy_no_im,
-                        Iz,
-                        j::Int,
-                        k::Int,
-                        N::Int,
-                        c::T) where T <: AbstractFloat
+function getmultiIjIk(
+    Id,
+    Ix,
+    Iy_no_im,
+    Iz,
+    j::Int,
+    k::Int,
+    N::Int,
+    c::T,
+    ) where T <: AbstractFloat
 
     ### x.
     # prepare base operators.

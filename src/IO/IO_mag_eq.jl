@@ -5,13 +5,14 @@ i-th spin system, k-th magnetically equivalent nuclei, l-th local spin index.
 """
 function getmageqmolecule(
     g,
-    H_inds_sys,
-    dict_ind_to_H_ID,
-    dict_H_inds_to_css,
-    dict_H_IDs_to_css,
-    dict_J_ID_to_val,
-    J_IDs;
-    atol = 1e-6)
+    H_inds_sys::Vector{Vector{Int}},
+    dict_ind_to_H_ID::Dict{Int, Int},
+    dict_H_inds_to_css::Dict{Int, T},
+    dict_H_IDs_to_css::Dict{Int, T},
+    dict_J_ID_to_val::Dict{Tuple{Int, Int}, T},
+    J_IDs::Vector{Tuple{Int, Int}};
+    atol::T = convert(T, 1e-6),
+    ) where T <: AbstractFloat
 
     C_g = Graphs.maximal_cliques(g)
 
@@ -24,11 +25,13 @@ function getmageqmolecule(
     for i = 1:N_spin_systems
         C = keeptargetintegers(C_g, H_inds_sys[i])
 
-        mag_eq_IDs0, mag_eq_inds0 = getmageqIDs(C,
+        mag_eq_IDs0, mag_eq_inds0 = getmageqIDs(
+            C,
             dict_ind_to_H_ID,
             dict_H_inds_to_css,
             dict_H_IDs_to_css, dict_J_ID_to_val, J_IDs;
-            atol = atol)
+            atol = atol,
+        )
 
         mag_eq_inds = combinetransitiveeqgroups(mag_eq_inds0)
         mag_eq_IDs = combinetransitiveeqgroups(mag_eq_IDs0)
@@ -73,21 +76,28 @@ end
 
 
 """
-getmageqIDs(C::Vector{Vector{Int}},
-    dict_ind_to_H_ID,
-    dict_H_inds_to_css;
-    atol::Float64 = 1e-6)
+getmageqIDs(
+    C::Vector{Vector{Int}},
+    dict_ind_to_H_ID::Dict{Int, Int},
+    dict_H_inds_to_css::Dict{Int, T},
+    dict_H_IDs_to_css::Dict{Int, T},
+    dict_J_ID_to_val::Dict{Tuple{Int, Int}, T},
+    J_IDs::Vector{Tuple{Int, Int}};
+    atol::T = convert(T, 1e-6),
+    ) where T <: AbstractFloat
 
 Given a list of node indices `C` of cliques of an undirected graph, with the indices of a clique being C[i],
 Returns the list of node indices for each clique that are magnetically equivalent.
 """
-function getmageqIDs(C::Vector{Vector{Int}},
-    dict_ind_to_H_ID,
-    dict_H_inds_to_css,
-    dict_H_IDs_to_css,
-    dict_J_ID_to_val,
-    J_IDs;
-    atol::Float64 = 1e-6)
+function getmageqIDs(
+    C::Vector{Vector{Int}},
+    dict_ind_to_H_ID::Dict{Int, Int},
+    dict_H_inds_to_css::Dict{Int, T},
+    dict_H_IDs_to_css::Dict{Int, T},
+    dict_J_ID_to_val::Dict{Tuple{Int, Int}, T},
+    J_IDs::Vector{Tuple{Int, Int}};
+    atol::T = convert(T, 1e-6),
+    ) where T <: AbstractFloat
 
     # traverse each maximally connected cliques.
     C_IDs_mag_eq = Vector{Vector{Vector{Int}}}(undef, length(C))
@@ -159,15 +169,21 @@ function matchanyJlabels(label_pair_list::Vector{Tuple{Int,Int}}, search_list::V
 end
 
 """
-getJIDstest(J_IDs::Vector{Tuple{Int,Int}},
+getJIDstest(
+    J_IDs::Vector{Tuple{Int,Int}},
     common_cs_IDs::Vector{Int},
-    dict_H_IDs_to_css; atol = 1e-6)
+    dict_H_IDs_to_css::Dict{Int, T};
+    atol::T = convert(T, 1e-6),
+)::Vector{Int} where T <: AbstractFloat
 
 Get the list of A-C, B-C, A-D, B-D, etc pairs to test.
 """
-function getJIDstest(J_IDs::Vector{Tuple{Int,Int}},
+function getJIDstest(
+    J_IDs::Vector{Tuple{Int,Int}},
     common_cs_IDs::Vector{Int},
-    dict_H_IDs_to_css; atol = 1e-6)
+    dict_H_IDs_to_css::Dict{Int, T};
+    atol::T = convert(T, 1e-6),
+    )::Vector{Int} where T <: AbstractFloat
 
     inds_any = matchanyJlabels(J_IDs, common_cs_IDs)
     inds_both = matchJlabels(J_IDs, common_cs_IDs)
@@ -178,7 +194,7 @@ function getJIDstest(J_IDs::Vector{Tuple{Int,Int}},
 
 
     target_IDs = Vector{Int}(undef, 0)
-    for l = 1:length(J_IDs_tmp)
+    for l in eachindex(J_IDs_tmp)
         i, j = J_IDs_tmp[l]
 
         # look for nuclei pairs that have the same chemical shift.
@@ -200,19 +216,25 @@ end
 
 
 """
-checkmageq(test_inds::Vector{Vector{Int}},
+checkmageq(
+    test_inds::Vector{Int},
     cs_IDs::Vector{Int},
-    dict_J_ID_to_val;
-    atol = 1e-6)::Bool
+    dict_J_ID_to_val::Dict{Tuple{Int, Int}, T},
+    dict_H_IDs_to_css::Dict{Int, T},
+    J_IDs::Vector{Tuple{Int, Int}};
+    atol::T = convert(T, 1e-6),
+)::Bool where T <: AbstractFloat
 
 `test_inds` is a list of indices in cs_IDs. This function checks for magnetic equivalence for the nuclei in `test_inds`.
 """
-function checkmageq(test_inds::Vector{Int},
+function checkmageq(
+    test_inds::Vector{Int},
     cs_IDs::Vector{Int},
-    dict_J_ID_to_val,
-    dict_H_IDs_to_css,
-    J_IDs;
-    atol = 1e-6)::Bool
+    dict_J_ID_to_val::Dict{Tuple{Int, Int}, T},
+    dict_H_IDs_to_css::Dict{Int, T},
+    J_IDs::Vector{Tuple{Int, Int}};
+    atol::T = convert(T, 1e-6),
+    )::Bool where T <: AbstractFloat
 
     if length(test_inds) == 1
         # need to have at least two nuclei to be magnetically equivalent.
@@ -309,13 +331,23 @@ function combinetransitiveeqgroups(eq_inds::Vector{Vector{Int}})
 end
 
 ### final package for a molecule.
-function getmageqinfo(H_IDs, H_css::Vector{T}, J_IDs, J_vals;
-    unique_cs_atol = 1e-6)::Tuple{Vector{Vector{Vector{Int}}},Vector{Vector{Vector{Int}}},Vector{Vector{Vector{Int}}}} where T <: AbstractFloat
-
+function getmageqinfo(
+    H_IDs::Vector{Int},
+    H_css::Vector{T},
+    J_IDs::Vector{Tuple{Int, Int}},
+    J_vals::Vector{T};
+    unique_cs_atol::T = convert(T, 1e-6),
+    )::Tuple{
+        Vector{Vector{Vector{Int}}},
+        Vector{Vector{Vector{Int}}},
+        Vector{Vector{Vector{Int}}},
+        } where T <: AbstractFloat
+    
     # parse the spin systems and singlets.
     J_inds_sys, J_inds_sys_local, J_IDs_sys, J_vals_sys, H_inds_sys,
-    cs_sys, H_inds_singlets, cs_singlets, H_inds, J_inds,
-    g = setupcsJ(H_IDs, H_css, J_IDs, J_vals)
+    cs_sys, H_inds_singlets, cs_singlets, H_inds, J_inds, g = setupcsJ(
+        H_IDs, H_css, J_IDs, J_vals,
+    )
 
     # set up look-up.
     dict_H_IDs_to_css = Dict(H_IDs .=> H_css)
@@ -337,27 +369,4 @@ function getmageqinfo(H_IDs, H_css::Vector{T}, J_IDs, J_vals;
 
     return mag_eq_sys_inds_local, mag_eq_sys_IDs,
     mag_eq_sys_inds_global
-end
-
-# unused?
-function getmageqinfomixture(
-    ::Type{T},
-    target_entries::Vector{String},
-    base_path::String,
-    dict_molecule_to_filename;
-    unique_cs_atol = 1e-6) where T
-
-    N_molecules = length(target_entries)
-    MEs = Vector{Vector{Vector{Vector{Int}}}}(undef, N_molecules)
-
-    for n = 1:N_molecules
-
-        # TODO add error-handling if name is not found in the dictionary, or filename does not exist.
-        load_path = joinpath(base_path, dict_molecule_to_filename[target_entries[n]]["file name"])
-        H_IDs, H_css, J_IDs, J_vals = loadcouplinginfojson(T, load_path)
-
-        MEs[n], _ = getmageqinfo(H_IDs, H_css, J_IDs, J_vals; unique_cs_atol = unique_cs_atol)
-    end
-
-    return MEs
 end
