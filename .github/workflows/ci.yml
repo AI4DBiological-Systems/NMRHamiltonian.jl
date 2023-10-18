@@ -12,8 +12,8 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1'
-          - '^1.9'
+          - '1.9'
+          - '^1'
         os:
           - ubuntu-latest
           - macOS-latest
@@ -41,6 +41,7 @@ jobs:
           julia --project=@. -e '
             using Pkg
             Pkg.Registry.add(RegistrySpec(url = "https://github.com/AI4DBiological-Systems/PublicJuliaRegistry"))'
+            
         shell: bash
         env:
           DATADEPS_ALWAYS_ACCEPT: true
@@ -69,6 +70,7 @@ jobs:
             import Pkg; Pkg.add("Documenter")
             using Pkg
             Pkg.Registry.add(RegistrySpec(url = "https://github.com/AI4DBiological-Systems/PublicJuliaRegistry"))
+            
             Pkg.develop(PackageSpec(path=pwd()))
             Pkg.instantiate()'
         shell: bash
@@ -80,13 +82,16 @@ jobs:
             using Documenter: doctest
             using Pkg
             Pkg.Registry.add(RegistrySpec(url = "https://github.com/AI4DBiological-Systems/PublicJuliaRegistry"))
+            
             using NMRHamiltonian
+            const HAM = NMRHamiltonian
             doctest(NMRHamiltonian)'
         shell: bash
         env:
           DATADEPS_ALWAYS_ACCEPT: true
       - run: julia --project=docs docs/make.jl 'using Pkg;
             Pkg.Registry.add(RegistrySpec(url = "https://github.com/AI4DBiological-Systems/PublicJuliaRegistry"))'
+            
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
