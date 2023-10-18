@@ -40,8 +40,9 @@ jobs:
       - run: |
           julia --project=@. -e '
             using Pkg
+            Pkg.Registry.add(RegistrySpec(url = "https://github.com/RoyCCWang/RWPublicJuliaRegistry"))'
             Pkg.Registry.add(RegistrySpec(url = "https://github.com/AI4DBiological-Systems/PublicJuliaRegistry"))'
-            
+
         shell: bash
         env:
           DATADEPS_ALWAYS_ACCEPT: true
@@ -69,6 +70,7 @@ jobs:
           julia --project=docs -e '
             import Pkg; Pkg.add("Documenter")
             using Pkg
+            Pkg.Registry.add(RegistrySpec(url = "https://github.com/RoyCCWang/RWPublicJuliaRegistry"))'
             Pkg.Registry.add(RegistrySpec(url = "https://github.com/AI4DBiological-Systems/PublicJuliaRegistry"))
             
             Pkg.develop(PackageSpec(path=pwd()))
@@ -81,6 +83,7 @@ jobs:
             import Pkg; Pkg.add("Documenter")
             using Documenter: doctest
             using Pkg
+            Pkg.Registry.add(RegistrySpec(url = "https://github.com/RoyCCWang/RWPublicJuliaRegistry"))'
             Pkg.Registry.add(RegistrySpec(url = "https://github.com/AI4DBiological-Systems/PublicJuliaRegistry"))
             
             using NMRHamiltonian
@@ -90,6 +93,7 @@ jobs:
         env:
           DATADEPS_ALWAYS_ACCEPT: true
       - run: julia --project=docs docs/make.jl 'using Pkg;
+            Pkg.Registry.add(RegistrySpec(url = "https://github.com/RoyCCWang/RWPublicJuliaRegistry"))'
             Pkg.Registry.add(RegistrySpec(url = "https://github.com/AI4DBiological-Systems/PublicJuliaRegistry"))'
             
         shell: bash
