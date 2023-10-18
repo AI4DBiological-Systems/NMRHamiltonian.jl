@@ -5,10 +5,14 @@ Given chemical shifts and J-coupling values, produce simulated amplitude and fre
 [https://AI4DBiological-Systems.github.io/NMRHamiltonian.jl/](https://AI4DBiological-Systems.github.io/NMRHamiltonian.jl/)
 
 # Install
-First add the custom registry.
+Add the custom registries, then the package.
 ```
 using Pkg
-pkg"registry add General https://github.com/AI4DBiological-Systems/PublicJuliaRegistry"
+
+pkg"registry add https://github.com/RoyCCWang/RWPublicJuliaRegistry"
+
+pkg"registry add https://github.com/AI4DBiological-Systems/PublicJuliaRegistry"
+
 pkg"add NMRHamiltonian"
 ```
 
