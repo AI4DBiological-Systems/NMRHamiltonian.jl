@@ -1,8 +1,8 @@
-"""
-output index format:
-x[i][j][k][l]
-i-th spin system, k-th magnetically equivalent nuclei, l-th local spin index.
-"""
+# """
+# output index format:
+# x[i][j][k][l]
+# i-th spin system, k-th magnetically equivalent nuclei, l-th local spin index.
+# """
 function getmageqmolecule(
     g,
     H_inds_sys::Vector{Vector{Int}},
@@ -47,15 +47,15 @@ function getmageqmolecule(
     return mag_eq_sys_inds_local, mag_eq_sys_IDs, mag_eq_sys_inds_global
 end
 
-"""
-convertlabelsglobaltolocal(H_inds_sys::Vector{Vector{Int}},
-    mag_eq_sys_inds::Vector{Vector{Int}})
+# """
+# convertlabelsglobaltolocal(H_inds_sys::Vector{Vector{Int}},
+#     mag_eq_sys_inds::Vector{Vector{Int}})
 
-The return type is Vector{Vector{Int}}.
+# The return type is Vector{Vector{Int}}.
 
-Local: Each spin system will have its own spin nucleui numbering that starts at 1.
-Global: The spins systems will together have one single spin nucleui numbering that starts at 1.
-"""
+# Local: Each spin system will have its own spin nucleui numbering that starts at 1.
+# Global: The spins systems will together have one single spin nucleui numbering that starts at 1.
+# """
 function getmageqlocalinds(H_inds::Vector{Int},
     mag_eq_sys_inds::Vector{Vector{Int}})
 
@@ -75,20 +75,20 @@ function getmageqlocalinds(H_inds::Vector{Int},
 end
 
 
-"""
-getmageqIDs(
-    C::Vector{Vector{Int}},
-    dict_ind_to_H_ID::Dict{Int, Int},
-    dict_H_inds_to_css::Dict{Int, T},
-    dict_H_IDs_to_css::Dict{Int, T},
-    dict_J_ID_to_val::Dict{Tuple{Int, Int}, T},
-    J_IDs::Vector{Tuple{Int, Int}};
-    atol::T = convert(T, 1e-6),
-    ) where T <: AbstractFloat
+# """
+# getmageqIDs(
+#     C::Vector{Vector{Int}},
+#     dict_ind_to_H_ID::Dict{Int, Int},
+#     dict_H_inds_to_css::Dict{Int, T},
+#     dict_H_IDs_to_css::Dict{Int, T},
+#     dict_J_ID_to_val::Dict{Tuple{Int, Int}, T},
+#     J_IDs::Vector{Tuple{Int, Int}};
+#     atol::T = convert(T, 1e-6),
+#     ) where T <: AbstractFloat
 
-Given a list of node indices `C` of cliques of an undirected graph, with the indices of a clique being C[i],
-Returns the list of node indices for each clique that are magnetically equivalent.
-"""
+# Given a list of node indices `C` of cliques of an undirected graph, with the indices of a clique being C[i],
+# Returns the list of node indices for each clique that are magnetically equivalent.
+# """
 function getmageqIDs(
     C::Vector{Vector{Int}},
     dict_ind_to_H_ID::Dict{Int, Int},
@@ -149,11 +149,11 @@ end
 ### routines related to checking whether the J-coupling value of A-C and B-C
 # are the same, for all C's connected to either A or B. A and B are
 # chemically equivalent nuclei.
-"""
-matchJlabels((label_pair_list::Vector{Tuple{Int,Int}}, search_list::Vector{Int})::Vector{Int}
+# """
+# matchJlabels((label_pair_list::Vector{Tuple{Int,Int}}, search_list::Vector{Int})::Vector{Int}
 
-Returns the indices of entries of `label_pair_list` that has any of the labels in the `search_list`.
-"""
+# Returns the indices of entries of `label_pair_list` that has any of the labels in the `search_list`.
+# """
 function matchanyJlabels(label_pair_list::Vector{Tuple{Int,Int}}, search_list::Vector{Int})::Vector{Int}
 
     inds = Vector{Int}(undef, 0)
@@ -168,16 +168,16 @@ function matchanyJlabels(label_pair_list::Vector{Tuple{Int,Int}}, search_list::V
     return inds
 end
 
-"""
-getJIDstest(
-    J_IDs::Vector{Tuple{Int,Int}},
-    common_cs_IDs::Vector{Int},
-    dict_H_IDs_to_css::Dict{Int, T};
-    atol::T = convert(T, 1e-6),
-)::Vector{Int} where T <: AbstractFloat
+# """
+# getJIDstest(
+#     J_IDs::Vector{Tuple{Int,Int}},
+#     common_cs_IDs::Vector{Int},
+#     dict_H_IDs_to_css::Dict{Int, T};
+#     atol::T = convert(T, 1e-6),
+# )::Vector{Int} where T <: AbstractFloat
 
-Get the list of A-C, B-C, A-D, B-D, etc pairs to test.
-"""
+# Get the list of A-C, B-C, A-D, B-D, etc pairs to test.
+# """
 function getJIDstest(
     J_IDs::Vector{Tuple{Int,Int}},
     common_cs_IDs::Vector{Int},
@@ -215,18 +215,18 @@ end
 
 
 
-"""
-checkmageq(
-    test_inds::Vector{Int},
-    cs_IDs::Vector{Int},
-    dict_J_ID_to_val::Dict{Tuple{Int, Int}, T},
-    dict_H_IDs_to_css::Dict{Int, T},
-    J_IDs::Vector{Tuple{Int, Int}};
-    atol::T = convert(T, 1e-6),
-)::Bool where T <: AbstractFloat
+# """
+# checkmageq(
+#     test_inds::Vector{Int},
+#     cs_IDs::Vector{Int},
+#     dict_J_ID_to_val::Dict{Tuple{Int, Int}, T},
+#     dict_H_IDs_to_css::Dict{Int, T},
+#     J_IDs::Vector{Tuple{Int, Int}};
+#     atol::T = convert(T, 1e-6),
+# )::Bool where T <: AbstractFloat
 
-`test_inds` is a list of indices in cs_IDs. This function checks for magnetic equivalence for the nuclei in `test_inds`.
-"""
+# `test_inds` is a list of indices in cs_IDs. This function checks for magnetic equivalence for the nuclei in `test_inds`.
+# """
 function checkmageq(
     test_inds::Vector{Int},
     cs_IDs::Vector{Int},
@@ -267,11 +267,11 @@ function checkmageq(
 end
 
 
-"""
-getJfromdict(i::Int, j::Int, dict::Dict{Tuple{Int,Int},T} ) where T
+# """
+# getJfromdict(i::Int, j::Int, dict::Dict{Tuple{Int,Int},T} ) where T
 
-query `dict` for the entry `(i,j)` and `(j,i)`. Returns the entry for `(i,j)`. Returns the entry for `(j,i)` if `(i,j)` is not found. Return zero if both entries are not found.
-"""
+# query `dict` for the entry `(i,j)` and `(j,i)`. Returns the entry for `(i,j)`. Returns the entry for `(j,i)` if `(i,j)` is not found. Return zero if both entries are not found.
+# """
 function getJfromdict(i::Int, j::Int, dict::Dict{Tuple{Int,Int},T} ) where T
     #
     if haskey(dict, (i,j))
@@ -287,14 +287,14 @@ end
 
 
 
-"""
-combinetransitiveeqgroups(eq_inds::Vector{Vector{Int}})
+# """
+# combinetransitiveeqgroups(eq_inds::Vector{Vector{Int}})
 
-`eq_inds` contains theequivalent nuclei indices.
-This function combine the groups of equivalent nuclei via transitivity.
+# `eq_inds` contains theequivalent nuclei indices.
+# This function combine the groups of equivalent nuclei via transitivity.
 
-Assumes the equivalence relation cannot be true for a group containg only one nucleus.
-"""
+# Assumes the equivalence relation cannot be true for a group containg only one nucleus.
+# """
 function combinetransitiveeqgroups(eq_inds::Vector{Vector{Int}})
 
     if isempty(eq_inds)

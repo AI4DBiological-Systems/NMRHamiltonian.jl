@@ -1,17 +1,17 @@
 
 ############# IO ζ to cs-sys to Phy::PhysicalParamsType.
 
-# modified from condensenuclei(), to not accumulate the equivalence variables.
-"""
-ordering must contain integers from 1:N, where N is the number of unique entries in ordering.
+# # modified from condensenuclei(), to not accumulate the equivalence variables.
+# """
+# ordering must contain integers from 1:N, where N is the number of unique entries in ordering.
 
-Example:
-using Linearalgebra
-cs = randn(10)
-ordering = [ 2; 2; 2; 3; 4; 5;  1; 1; 1; 6]
-z = nuclei2vars(cs, ordering)
+# Example:
+# using Linearalgebra
+# cs = randn(10)
+# ordering = [ 2; 2; 2; 3; 4; 5;  1; 1; 1; 6]
+# z = nuclei2vars(cs, ordering)
 
-"""
+# """
 function nuclei2vars(
     x::Vector{T},
     ordering::Vector{Int},

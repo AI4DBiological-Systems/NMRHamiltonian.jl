@@ -33,9 +33,7 @@ function getΔcm(A::SpinSystem{T}; intensity_tol::T = zero(T)) where T
 end
 
 # TODO check and return gracefully.
-"""
-αs and Ωs must not contain singlet groups.
-"""
+# αs and Ωs must not contain singlet groups.
 function partitionresonances(
     spin_systems::Vector{SpinSystem{T}},
     N_spins_sys::Vector{Int};
@@ -183,9 +181,6 @@ function getpartition(
             ind = ind2
         end
     end
-
-    #γs = distance_set
-    #Gs = partition_set
 
     part_inds = partition_set[ind]
 

@@ -48,45 +48,7 @@ This should be strictly above 1. The higher this number, the more resonance grou
 end
 
 # multiple spin systems. Partition
-"""
-```
-PartitionsParametersType{T<:AbstractFloat, KT}
-- θs::Vector{KT}
-- γs::Vector{T}
-- knns::Vector{Int}
-- radi::Vector{T}
-```
 
-Configuration parameters for the resonance group partition portion of `simulate()`. This configuration is for one molecule entry, and the i-th element the `Vector` in each field variable is for the i-th non-singlet spin system.
-
-≡≡≡≡≡≡≡≡ Details ≡≡≡≡≡≡≡≡
-
-### `θs::Vector{KT}`
-List of kernel parameters for the weight function.
-
-### `γs::Vector{T}`
-List of sparsity-inducing regularization parameters.
-
-### `knns::Vector{Int}`
-List of nearest neibours, for use in the knn-approach to setting up the partition problem.
-
-### `radi::Vector{T}`
-List of radius parameters, for use in the proximity distance-approach to setting up the partition problem.
-
-
-"""
-mutable struct PartitionsParametersType{T<:AbstractFloat, KT}
-    θs::Vector{KT}
-    γs::Vector{T}
-    knns::Vector{Int}
-    radi::Vector{T}
-end
-
-struct SqExpKernelType{T}
-    γ::Base.RefValue{T} # gain.
-    a::Base.RefValue{T} # inverse bandwidth  exp(-θ.a[]*τ^2)
-    #θ::Vector{T} # [γ; a], (xx,zz)->γ*exp(-a*norm(xx-zz)^2)
-end
 
 abstract type CentroidTrait end
 #struct WeightedCentroids <: CentroidTrait end # won't have sum(Δc_bar) ≈ -1.

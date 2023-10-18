@@ -120,7 +120,7 @@ molecule_mapping_file_path = joinpath(
 #molecule_mapping_file_path = joinpath(molecule_mapping_root_path, "GISSMO_names.json")
 
 
-# # These produce a aprtition tree over the searched γ values for many molecule entries. Type ?help HAM.SHConfig for details.
+# Type ?help HAM.SHConfig for details.
 config_SH = HAM.SHConfig{T}(
     coherence_tol = convert(T, 0.01),
     relative_α_threshold = convert(T, 0.005),

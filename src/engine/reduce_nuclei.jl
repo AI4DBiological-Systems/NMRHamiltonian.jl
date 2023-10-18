@@ -1,17 +1,17 @@
-"""
-function createorderingfromeqinds(eq_inds::Vector{Vector{Int}}, N::Int)::Tuple{Vector{Int},Int}
+# """
+# function createorderingfromeqinds(eq_inds::Vector{Vector{Int}}, N::Int)::Tuple{Vector{Int},Int}
 
-Creates ordering of length N from equivalent indices.
-`eq_inds` can only contain unique values from 1:N.
-When used for a spin system, N is the number of nuclei in the system.
+# Creates ordering of length N from equivalent indices.
+# `eq_inds` can only contain unique values from 1:N.
+# When used for a spin system, N is the number of nuclei in the system.
 
-Returns the indices for the N nuclei, and the number of degrees of freedom.
+# Returns the indices for the N nuclei, and the number of degrees of freedom.
 
-Example:
-import Destruct
-tmp = collect( createorderingfromeqinds(ME[i], A.N_spins_sys[i]) for i = 1:length(A.N_spins_sys) )
-κs_β_ordering, κs_β_DOF = Destruct.destruct(tmp)
-"""
+# Example:
+# import Destruct
+# tmp = collect( createorderingfromeqinds(ME[i], A.N_spins_sys[i]) for i = 1:length(A.N_spins_sys) )
+# κs_β_ordering, κs_β_DOF = Destruct.destruct(tmp)
+# """
 function createorderingfromeqinds(eq_inds::Vector{Vector{Int}}, N::Int)::Tuple{Vector{Int},Int}
 
     j = 0 # degrees of freedom counter.
@@ -46,15 +46,15 @@ function createorderingfromeqinds(eq_inds::Vector{Vector{Int}}, N::Int)::Tuple{V
 end
 
 
-"""
-ordering must contain integers from 1:N, where N is the number of unique entries in ordering.
+# """
+# ordering must contain integers from 1:N, where N is the number of unique entries in ordering.
 
-Example:
-Δc_i_l = randn(10)
-κs_β_ordering_i = [ 2; 2; 2; 3; 4; 5;  1; 1; 1; 6]
-y = condensenuclei(Δc_i_l, κs_β_ordering_i)
+# Example:
+# Δc_i_l = randn(10)
+# κs_β_ordering_i = [ 2; 2; 2; 3; 4; 5;  1; 1; 1; 6]
+# y = condensenuclei(Δc_i_l, κs_β_ordering_i)
 
-"""
+# """
 function condensenuclei(
     x::Vector{T},
     ordering::Vector{Int},
@@ -90,16 +90,16 @@ function condensenuclei(
 end
 
 
-"""
-returns a reduced length (in the most nested level) version of Δc.
-ME_m is equivalence indices for a spin system. Could be a spin group from an entry of MEs, the return type of getmageqinfomixture().
-Δc_m is a field in a spin group of the SHType composite type.
+# """
+# returns a reduced length (in the most nested level) version of Δc.
+# ME_m is equivalence indices for a spin system. Could be a spin group from an entry of MEs, the return type of getmageqinfomixture().
+# Δc_m is a field in a spin group of the SHType composite type.
 
-Example: (work on later, see reduce/batch.jl)
-c = NMRSpectraSimulator.reduceΔc(A.Δc, ME, A.N_spins_sys)
-c2 = NMRSpectraSimulator.reduceΔc(A.Δc[1], ME[1], A.N_spins_sys[1])
+# Example: (work on later, see reduce/batch.jl)
+# c = NMRSpectraSimulator.reduceΔc(A.Δc, ME, A.N_spins_sys)
+# c2 = NMRSpectraSimulator.reduceΔc(A.Δc[1], ME[1], A.N_spins_sys[1])
 
-"""
+# """
 function reduceΔc(Δc_m::Vector{Vector{T}},
     ME_m::Vector{Vector{Int}},
     N_spins::Int) where T
@@ -127,17 +127,17 @@ end
 ################## for testing only.
 
 
-"""
-function getcoherencedropviolations(Δc::Vector{Vector{Vector{T}}}) where T
+# """
+# function getcoherencedropviolations(Δc::Vector{Vector{Vector{T}}}) where T
 
-Utility function for testing whether the `Δc_bar` and `Δc` fields from variables of data type `SHType` sum to `-1`.
+# Utility function for testing whether the `Δc_bar` and `Δc` fields from variables of data type `SHType` sum to `-1`.
 
-Example:
-```
-chks_m, status_m = getcoherencedropviolations(As[1].Δc)
-chks_bar, status_bar = getcoherencedropviolations(As[1].Δc_bar)
-```
-"""
+# Example:
+# ```
+# chks_m, status_m = getcoherencedropviolations(As[1].Δc)
+# chks_bar, status_bar = getcoherencedropviolations(As[1].Δc_bar)
+# ```
+# """
 function getcoherencedropviolations(
     Δc::Vector{Vector{Vector{T}}};
     atol::T = convert(T, 1e-1),
@@ -213,19 +213,19 @@ function extractmagnitudestatus(A::CoherenceDiagnostics)
     return A.valid_magnitude_Δc_m, A.valid_magnitude_Δc_bar
 end
 
-"""
-function getΔcdiagnostics(
-    As::Vector{SHType{T}};
-    atol::T = convert(T, 1e-1),
-    )::CoherenceDiagnostics where T
+# """
+# function getΔcdiagnostics(
+#     As::Vector{SHType{T}};
+#     atol::T = convert(T, 1e-1),
+#     )::CoherenceDiagnostics where T
 
-Container of diagnostics for whether every Δc vector sums to -1 within +/- atol, and whether the components have a magnitude that is < 1, within atol.
+# Container of diagnostics for whether every Δc vector sums to -1 within +/- atol, and whether the components have a magnitude that is < 1, within atol.
 
-Example
-```
-coherence_diagnostics = getΔcdiagnostics(As)
-```
-"""
+# Example
+# ```
+# coherence_diagnostics = getΔcdiagnostics(As)
+# ```
+# """
 function getΔcdiagnostics(
     As::Vector{SHType{T}};
     atol::T = convert(T, 1e-1),

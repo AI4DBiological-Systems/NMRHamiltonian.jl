@@ -28,6 +28,51 @@ function assembledict(molecule_entries::Vector{NT},
 end
 
 # makes a folder at `file_folder` if it doesn't exist.
+"""
+saveasJSON(
+    output_folder::String,
+    file_name::String,
+    dict,
+)
+
+Example setup:
+```
+config = HAM.SHConfig{T}(
+    coherence_tol = convert(T, 0.01),
+    relative_α_threshold = convert(T, 0.005),
+    tol_radius_1D = convert(T, 0.1),
+    nuc_factor = convert(T, 1.5),
+)
+unique_cs_atol = convert(T, 1e-6)
+
+Phys, As, MSPs = HAM.loadandsimulate(
+    T,
+    spectrometer_tag,
+    molecule_entries,
+    H_params_path,
+    molecule_mapping_file_path;
+    config = config,
+    unique_cs_atol = unique_cs_atol
+)
+```
+Usage with physical parameters:
+```
+S_Phys = HAM.serializephysicalparams(Phys, molecule_entries)
+HAM.saveasJSON(
+    joinpath(save_folder_path, "Phys.json"),
+    S_Phys,
+)
+```
+
+Usage with simulation results:
+```
+S_As = HAM.serializemixture(As)
+HAM.saveasJSON(
+    joinpath(save_folder_path, "As.json"),
+    S_As,
+)
+```
+"""
 function saveasJSON(
     output_folder::String,
     file_name::String,
@@ -52,6 +97,28 @@ function saveasJSON(save_path::String, dict)
     end
 
     return nothing
+end
+
+"""
+readJSON(file_path::String)
+
+Usage:
+```
+# save.
+S_Phys = HAM.serializephysicalparams(Phys, molecule_entries)
+HAM.saveasJSON(
+    Phys_filename,
+    S_Phys,
+)
+
+# load.
+dict_Phys = HAM.readJSON(Phys_filename)
+Phys_rec, molecule_entries_rec = HAM.deserializephysicalparams(Dict(dict_Phys))
+
+```
+"""
+function readJSON(file_path::String)
+    return JSON3.read(read(file_path))
 end
 
 ## not type safe.

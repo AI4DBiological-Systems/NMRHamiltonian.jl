@@ -5,9 +5,6 @@ using LinearAlgebra
 import Kronecker, Graphs
 import JSON3
 
-# using Pkg
-# Pkg.add(url="https://github.com/RoyCCWang/ConvexClustering.jl")
-
 import SingleLinkagePartitions
 const SL = SingleLinkagePartitions
 
@@ -46,12 +43,19 @@ getphysicalparameters,
 PhysicalParamsType,
 extractcs,
 
+serializephysicalparams,
+deserializephysicalparams,
 serializemixture,
+deserializemixture,
+saveasJSON,
+readJSON,
+
 simulate,
 SHConfig,
 SHType,
 
 readbasechemshifts,
+writebasechemshifts!,
 extractMEnuclei
 
 end

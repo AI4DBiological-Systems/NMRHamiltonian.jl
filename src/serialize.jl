@@ -22,6 +22,7 @@ function serializemixture(
 ) where T
 ```
 Returns a `Dict{Symbol, Any}` object, which can then be used with file serialization packages for saving to disk.
+For use with `saveasJSOn()`; see its docstring for more details.
 """
 function serializemixture(
     As::Vector{SHType{T}},
@@ -148,7 +149,7 @@ end
 serializephysicalparams(
     Phys::Vector{PhysicalParamsType{T}},
     molecule_entries::Vector{String},
-) where T
+    ) where T
 ```
 Returns a `Dict{Symbol, Any}` object, which can then be used with file serialization packages for saving to disk.
 """

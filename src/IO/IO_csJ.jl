@@ -58,11 +58,11 @@ function convertJIDstoJinds(J_IDs::Vector{Tuple{Int,Int}},
     return J_inds
 end
 
-"""
-matchJlabels((label_pair_list::Vector{Tuple{Int,Int}}, search_list::Vector{Int})::Vector{Int}
+# """
+# matchJlabels((label_pair_list::Vector{Tuple{Int,Int}}, search_list::Vector{Int})::Vector{Int}
 
-Returns the indices of entries of `label_pair_list` that has both labels in the `search_list`.
-"""
+# Returns the indices of entries of `label_pair_list` that has both labels in the `search_list`.
+# """
 function matchJlabels(label_pair_list::Vector{Tuple{Int,Int}}, search_list::Vector{Int})::Vector{Int}
 
     inds = Vector{Int}(undef, 0)
@@ -168,17 +168,19 @@ function removeredundantsinglets(H_inds::Vector{Vector{Int}}, cs_singlets::Vecto
     return H_inds_unique, cs_singlets_unique
 end
 
-"""
-convertJindsglobaltolocal(H_inds_sys::Vector{Vector{Int}},
-    J_inds_sys::Vector{Vector{Tuple{Int,Int}}})
+# """
+# convertJindsglobaltolocal(H_inds_sys::Vector{Vector{Int}},
+#     J_inds_sys::Vector{Vector{Tuple{Int,Int}}})
 
-The return type is Vector{Vector{Tuple{Int,Int}}}.
+# The return type is Vector{Vector{Tuple{Int,Int}}}.
 
-Local: Each spin system will have its own spin nucleui numbering that starts at 1.
-Global: The spins systems will together have one single spin nucleui numbering that starts at 1.
-"""
-function convertJindsglobaltolocal(H_inds_sys::Vector{Vector{Int}},
-    J_inds_sys::Vector{Vector{Tuple{Int,Int}}})
+# Local: Each spin system will have its own spin nucleui numbering that starts at 1.
+# Global: The spins systems will together have one single spin nucleui numbering that starts at 1.
+# """
+function convertJindsglobaltolocal(
+    H_inds_sys::Vector{Vector{Int}},
+    J_inds_sys::Vector{Vector{Tuple{Int,Int}}},
+    )
 
     @assert length(H_inds_sys) == length(J_inds_sys)
     N_systems = length(H_inds_sys)

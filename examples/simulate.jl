@@ -169,5 +169,37 @@ roundtripBSON(As)
 roundtripJSON(Phys, molecule_entries)
 roundtripBSON(Phys, molecule_entries)
 
+# save to disk.
+Phys_filename = "Phys.json"
+As_filename = "As.json"
+
+S_Phys = HAM.serializephysicalparams(Phys, molecule_entries)
+HAM.saveasJSON(
+    Phys_filename,
+    S_Phys,
+)
+
+S_As = HAM.serializemixture(As)
+HAM.saveasJSON(
+    As_filename,
+    S_As,
+)
+
+# load from disk.
+dict_As = HAM.readJSON(As_filename)
+As_rec = HAM.deserializemixture(dict_As)
+
+dict_Phys = HAM.readJSON(Phys_filename)
+Phys_rec, molecule_entries_rec = HAM.deserializephysicalparams(Dict(dict_Phys))
+
+@assert typeof(As_rec) == typeof(As)
+@assert typeof(Phys_rec) == typeof(Phys)
+
+println("The following should be close to zero.")
+@show sum( norm(As_rec[n].Δc - As[n].Δc) for n in eachindex(As) ) 
+
+# clean-update
+rm(As_filename)
+rm(Phys_filename)
 
 nothing

@@ -1,8 +1,8 @@
-"""
-uniqueinds(a_in::Vector{T}; atol::T = convert(T, 1e-6)) where T
+# """
+# uniqueinds(a_in::Vector{T}; atol::T = convert(T, 1e-6)) where T
 
-Returns the unique values of `a_in`, with absolute tolerance `atol`, and the indices for each unique value.
-"""
+# Returns the unique values of `a_in`, with absolute tolerance `atol`, and the indices for each unique value.
+# """
 function uniqueinds(a_in::Vector{T}; atol::T = convert(T, 1e-6)) where T <: AbstractFloat
 
     if length(a_in) < 2
@@ -41,11 +41,11 @@ function uniqueinds(a_in::Vector{T}; atol::T = convert(T, 1e-6)) where T <: Abst
     return b, inds_b
 end
 
-"""
-keeptargetintegers(C::Vector{Vector{Int}}, search_list::Vector{Int})
+# """
+# keeptargetintegers(C::Vector{Vector{Int}}, search_list::Vector{Int})
 
-keep an entry from C if the any of its integer array values appear in any entry of `search_list`.
-"""
+# keep an entry from C if the any of its integer array values appear in any entry of `search_list`.
+# """
 function keeptargetintegers(C::Vector{Vector{Int}}, search_list::Vector{Int})
 
     keep_flags = falses(length(C))
@@ -60,11 +60,11 @@ function keeptargetintegers(C::Vector{Vector{Int}}, search_list::Vector{Int})
     return C[keep_flags]
 end
 
-"""
-getpairs(inds::Vector{T})
+# """
+# getpairs(inds::Vector{T})
 
-get all exhaustive pairwise combos without symmetry of the 1D array `inds`.
-"""
+# get all exhaustive pairwise combos without symmetry of the 1D array `inds`.
+# """
 function getpairs(inds::Vector{T}) where T
 
     out = Vector{Tuple{T,T}}(undef, 0)
@@ -77,11 +77,11 @@ function getpairs(inds::Vector{T}) where T
     return out
 end
 
-"""
-isallsame(a::Vector{T}; atol::T = convert(T, 1e-6)) where T
+# """
+# isallsame(a::Vector{T}; atol::T = convert(T, 1e-6)) where T
 
-returns true if the entries in `a` are all within an abolute tolerance of `atol`.
-"""
+# returns true if the entries in `a` are all within an abolute tolerance of `atol`.
+# """
 function isallsame(a::Vector{T}; atol::T = convert(T, 1e-6)) where T
     if length(findall(xx->isapprox(a[1], xx; atol = atol), a)) == length(a)
         return true
@@ -90,9 +90,9 @@ function isallsame(a::Vector{T}; atol::T = convert(T, 1e-6)) where T
     return false
 end
 
-"""
-Returns the edges of a connected path as specified by `vertices`.
-"""
+# """
+# Returns the edges of a connected path as specified by `vertices`.
+# """
 function getconnectpath(vertices::Vector{Int})
     N = length(vertices)
 

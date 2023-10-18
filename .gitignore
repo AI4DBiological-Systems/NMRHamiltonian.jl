@@ -30,3 +30,6 @@ docs_src/qmd/.ipynb_checkpoints
 
 /examples/test.bson
 /examples/test.json
+
+/examples/Phys.json
+/examples/As.json

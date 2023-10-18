@@ -46,19 +46,11 @@ end
 #     return collect( Iterators.flatten(x) )
 # end
 
-# function isnumericallyclose(x::T, y::T; tol::T = eps(T)*2) where T
-#     if abs(x-y) < tol
-#         return true
-#     end
+# """
+#     convertcompactdomain(x::T, a::T, b::T, c::T, d::T)::T
 
-#     return false
-# end
-
-"""
-    convertcompactdomain(x::T, a::T, b::T, c::T, d::T)::T
-
-converts compact domain x ∈ [a,b] to compact domain out ∈ [c,d].
-"""
+# converts compact domain x ∈ [a,b] to compact domain out ∈ [c,d].
+# """
 function convertcompactdomain(x::T, a::T, b::T, c::T, d::T)::T where T <: AbstractFloat
 
     return (x-a)*(d-c)/(b-a)+c
