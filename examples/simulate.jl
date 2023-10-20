@@ -106,7 +106,7 @@ spin_system_select = 1
 ppm_offset = convert(T, 0.2) # for display padding.
 N_viz = 50000
 
-two_pi_T = convert(T, 2*π)
+
 
 a = As[molecule_select].αs[spin_system_select]
 F = As[molecule_select].Ωs[spin_system_select]
@@ -114,7 +114,7 @@ F = As[molecule_select].Ωs[spin_system_select]
 hz2ppmfunc = uu->(uu - ν_0ppm)*SW/fs
 ppm2hzfunc = pp->(ν_0ppm + pp*fs/SW)
 
-ΩS_ppm = hz2ppmfunc.( F ./ two_pi_T )
+ΩS_ppm = hz2ppmfunc.( F ./ HAM.twopi(T) )
 ΩS_ppm_sorted = sort(ΩS_ppm)
 
 u_min = ppm2hzfunc(ΩS_ppm_sorted[1] - ppm_offset)
@@ -125,7 +125,7 @@ P_max = hz2ppmfunc(u_max)
 
 P = LinRange{T}(P_min, P_max, N_viz)
 U = ppm2hzfunc.(P)
-U_rad = U .* two_pi_T
+U_rad = U .* HAM.twopi(T)
 
 # absorption Lorentzian.
 
