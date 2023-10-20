@@ -166,7 +166,7 @@ spin_system_select = 1
 ppm_offset = convert(T, 0.2) # for display padding.
 N_viz = 50000 # this many points to plot
 
-two_pi_T = convert(T, 2*π)
+
 
 println("Visualizing $(molecule_entries[molecule_select]) and spin system $(spin_system_select).")
 
@@ -176,7 +176,7 @@ F = As[molecule_select].Ωs[spin_system_select]
 hz2ppmfunc = uu->(uu - ν_0ppm)*SW/fs # Hz to ppm conversion. This is useful to remember.
 ppm2hzfunc = pp->(ν_0ppm + pp*fs/SW) # ppm to Hz conversion. This is useful to remember.
 
-ΩS_ppm = hz2ppmfunc.( F ./ two_pi_T ) # convert to radial frequency.
+ΩS_ppm = hz2ppmfunc.( F ./ HAM.twopi(T) ) # convert to radial frequency.
 ΩS_ppm_sorted = sort(ΩS_ppm)
 
 u_min = ppm2hzfunc(ΩS_ppm_sorted[1] - ppm_offset)
@@ -187,7 +187,7 @@ P_max = hz2ppmfunc(u_max)
 
 P = LinRange(P_min, P_max, N_viz)
 U = ppm2hzfunc.(P)
-U_rad = U .* two_pi_T
+U_rad = U .* HAM.twopi(T)
 
 # absorption Lorentzian.
 function evalzerophasecl1Darray(u_rad, αs::Vector{T}, Ωs::Vector{T}, λ::T)::Complex{T} where T <: AbstractFloat

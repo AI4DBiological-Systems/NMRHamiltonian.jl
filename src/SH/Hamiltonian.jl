@@ -12,8 +12,6 @@ function getgenericHamiltoniantest( Id,
     N_couplings = length(J_vals)
     @assert N_couplings == length(J_inds)
 
-    two_pi_T = convert(T, 2*π)
-
     # pair-wise terms.
     H1 = zeros(T, 2^N, 2^N)
     for i = 1:N_couplings
@@ -29,7 +27,7 @@ function getgenericHamiltoniantest( Id,
             j,
             k,
             N,
-            two_pi_T*J_vals[i],
+            twopi(T)*J_vals[i],
         )
     end
 
@@ -50,7 +48,7 @@ function getgenericHamiltoniantest( Id,
     N = length(ω0)
     @assert size(J,1) == size(J,2) == N
 
-    two_pi_T = convert(T, 2*π)
+    
 
     # pair-wise terms.
     H1 = zeros(T, 2^N, 2^N)
@@ -65,7 +63,7 @@ function getgenericHamiltoniantest( Id,
                 j,
                 k,
                 N,
-                two_pi_T*J[j,k],
+                twopi(T)*J[j,k],
             )
 
         end
@@ -90,7 +88,7 @@ function getgenericHamiltonian( Id,
     N = length(ω0)
     @assert size(J,1) == size(J,2) == N
 
-    two_pi_T = convert(T, 2*π)
+    
 
     # pair-wise terms.
     H = zeros(T, 2^N, 2^N)
@@ -105,7 +103,7 @@ function getgenericHamiltonian( Id,
                 j,
                 k,
                 N,
-                two_pi_T*J[j,k],
+                twopi(T)*J[j,k],
             )
 
         end
@@ -129,14 +127,14 @@ function getgenericHamiltonian0( Id,
     N = length(ω0)
     @assert size(J,1) == size(J,2) == N
 
-    two_pi_T = convert(T, 2*π)
+    
 
     H = zeros(T, 2^N, 2^N)
     for j = 1:N
         H += ω0[j] .* getmultiIz(Id, j, N)
 
         for k = j+1:N
-            H += (two_pi_T*J[j,k]) .* getmultiIjIk0(Id, Ix, Iy_no_im, Iz, j, k, N)
+            H += (twopi(T)*J[j,k]) .* getmultiIjIk0(Id, Ix, Iy_no_im, Iz, j, k, N)
         end
     end
 

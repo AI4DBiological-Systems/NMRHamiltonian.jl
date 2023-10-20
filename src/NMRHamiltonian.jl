@@ -8,6 +8,20 @@ import JSON3
 import SingleLinkagePartitions
 const SL = SingleLinkagePartitions
 
+# constant values.
+function twopi(::Type{Float32})::Float32
+    return 6.2831855f0 #convert(T, 2*π)
+end
+
+function twopi(::Type{Float64})::Float64
+    return 6.283185307179586 #convert(T, 2*π)
+end
+
+function twopi(::Type{T})::T where T <: AbstractFloat
+    return convert(T, 2*π)
+end
+
+
 include("./doc_strings/doc_types.jl")
 include("./doc_strings/doc_configs.jl")
 
