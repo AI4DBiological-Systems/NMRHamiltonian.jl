@@ -53,8 +53,6 @@ function partitionresonances(
     Δc_bar = Vector{Vector{Vector{T}}}(undef, N_systems)
     c_states = Vector{Vector{Tuple{Int64, Int64}}}(undef, N_systems)
 
-    #search_results = Vector{PartitionSearchRecord{T}}(undef, N_systems)
-
     for i = 1:N_systems
 
         # ## prune resonance components that have a low intensity.

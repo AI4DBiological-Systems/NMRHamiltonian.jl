@@ -9,9 +9,9 @@ import JSON3
 import BSON
 import Random
 
-import SingleLinkagePartitions
 
 using Revise
 
 import NMRHamiltonian
-HAM = NMRHamiltonian
+const HAM = NMRHamiltonian
+const SL = HAM.SL

@@ -76,14 +76,6 @@ function readbasechemshifts(
     for i in eachindex(ME)
         ordering, DOF = createorderingfromeqinds(ME[i], N_spins_sys[i])
         cs_shifts[i] = nuclei2vars(cs_sys[i], ordering)
-        # if length(ME[i]) > 0
-
-        #     ordering, DOF = createorderingfromeqinds(ME[i], N_spins_sys[i])
-        #     cs_shifts[i] = nuclei2vars(cs_sys[i], ordering)
-        # else
-        #     #
-        #     cs_shifts[i] = copy(cs_sys[i])
-        # end
     end
 
     for i in eachindex(cs_singlets)

@@ -77,7 +77,9 @@ function simulate(
             Δc,
             parts,
             Δc_bar,
-            N_spins_sys,
+            N_spins_sys, # this and the above mutates.
+
+            # here, N_spins_singlet gets appended to N_spins_sys, as with αs_singlets to αs, etc.
             αs_singlets,
             Ωs_singlets,
             N_spins_singlet,
@@ -117,7 +119,7 @@ function setupmoleculeSH(
 
     N_spins_sys = collect( length(cs_sys[m]) for m in eachindex(cs_sys) )
     intermediates_sys = prepcouplingalgorithm(T, N_spins_sys)
-
+    
     # αs_inp, Ωs_inp, coherence_mat_sys, eig_vals_sys, Q_sys,
     # coherence_state_pairs_sys, H_sys, states_sys, ms_sys, M_sys = computeSH(
     MSP = computeSH( # MSP stands for molecule spin system.
@@ -130,7 +132,7 @@ function setupmoleculeSH(
         N_spins_singlet,
         config,
     )
-
+    
     αs, Ωs, parts,
     Δc, Δc_bar, c_states = partitionresonances(
         MSP.spin_systems,
@@ -138,7 +140,7 @@ function setupmoleculeSH(
         ME = ME,
         relative_α_threshold = config.relative_α_threshold,
     )
-
+    
     return αs, Ωs, parts, Δc, Δc_bar, N_spins_sys,
     MSP.singlet_intensities, MSP.singlet_frequencies, N_spins_singlet, MSP
 end

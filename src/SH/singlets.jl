@@ -6,7 +6,7 @@ function setupsingletspinsystem!(
     Δc::Vector{Vector{Vector{T}}},
     parts::Vector{Vector{Vector{Int}}},
     Δc_bar::Vector{Vector{Vector{T}}},
-    N_spins_sys::Vector{Int},
+    N_spins_sys::Vector{Int}, # this and the above mutates.
     
     #η::Vector{Vector{Vector{T}}},
     αs_singlets::Vector{T},

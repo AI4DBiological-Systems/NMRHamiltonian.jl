@@ -82,6 +82,12 @@ println("Timing: simulate()")
     ν_0ppm,
     config,
 )
+println()
+
+cs_values = collect( HAM.readbasechemshifts(Phys[n]) for n in eachindex(Phys) )
+println("The reference chemical shift values (in ppm) for the Δc features: [compoune][spin system][ME nuclei]")
+display(cs_values)
+println()
 
 del_c_bars = collect( As[n].Δc_bar for n in eachindex(As) )
 N_res_groups = collect( length.(As[n].Δc_bar) for n in eachindex(As) )
