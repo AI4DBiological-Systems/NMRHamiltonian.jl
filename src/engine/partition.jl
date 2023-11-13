@@ -36,10 +36,12 @@ end
 # αs and Ωs must not contain singlet groups.
 function partitionresonances(
     spin_systems::Vector{SpinSystem{T}},
-    N_spins_sys::Vector{Int};
+    N_spins_sys::Vector{Int},
+    config::SHConfig;
     ME::Vector{Vector{Vector{Int}}} = Vector{Vector{Vector{Int}}}(undef, 0),
-    relative_α_threshold::T = convert(T, 0.01),
     ) where {T <: AbstractFloat}
+
+    relative_α_threshold, tol_radius_1D, nuc_factor = config.relative_α_threshold, config.tol_radius_1D, config.nuc_factor
 
     N_systems = length(spin_systems)
     @assert N_systems == length(N_spins_sys)
@@ -82,7 +84,9 @@ function partitionresonances(
         Δc_m_rescaled = scalebydim(Δc_m)
 
         part_inds = getpartition(
-            Δc_m_rescaled,
+            Δc_m_rescaled;
+            nuc_factor = nuc_factor,
+            tol_radius_1D = tol_radius_1D,
         )
 
         # won't yield Δc_bar such that they approximately sum to -1.

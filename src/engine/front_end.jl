@@ -136,9 +136,9 @@ function setupmoleculeSH(
     αs, Ωs, parts,
     Δc, Δc_bar, c_states = partitionresonances(
         MSP.spin_systems,
-        N_spins_sys;
+        N_spins_sys,
+        config;
         ME = ME,
-        relative_α_threshold = config.relative_α_threshold,
     )
     
     return αs, Ωs, parts, Δc, Δc_bar, N_spins_sys,
