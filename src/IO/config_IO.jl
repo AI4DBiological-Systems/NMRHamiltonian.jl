@@ -44,6 +44,7 @@ config = HAM.SHConfig{T}(
     nuc_factor = convert(T, 1.5),
 )
 unique_cs_atol = convert(T, 1e-6)
+unique_J_avg_atol = convert(T, 1e-6)
 
 Phys, As, MSPs = HAM.loadandsimulate(
     T,
@@ -52,7 +53,9 @@ Phys, As, MSPs = HAM.loadandsimulate(
     H_params_path,
     molecule_mapping_file_path;
     config = config,
-    unique_cs_atol = unique_cs_atol
+    unique_cs_atol = unique_cs_atol,
+    unique_J_avg_atol = unique_J_avg_atol,
+    
 )
 ```
 Usage with physical parameters:

@@ -354,6 +354,7 @@ getphysicalparameters(
     H_params_path::String,
     molecule_mapping_file_path;
     unique_cs_atol::T = convert(T, 1e-6),
+    unique_J_avg_atol = convert(T, 1e-6),
 ) where T <: AbstractFloat
 ```
 
@@ -449,6 +450,7 @@ function getphysicalparameters(
     H_params_path::String,
     molecule_mapping_file_path;
     unique_cs_atol::T = convert(T, 1e-6),
+    unique_J_avg_atol = convert(T, 1e-6),
     ) where T <: AbstractFloat
     
     load_paths, dict_molecule_to_filename = getloadpaths(target_entries, H_params_path, molecule_mapping_file_path)
@@ -457,6 +459,7 @@ function getphysicalparameters(
         T,
         load_paths;
         unique_cs_atol = unique_cs_atol,
+        unique_J_avg_atol = unique_J_avg_atol,
         )
 end
 
@@ -464,7 +467,7 @@ function getphysicalparameters(
     ::Type{T},
     load_paths::Vector{String};
     unique_cs_atol::T = convert(T, 1e-6),
-    unique_J_avg_atol::T = convert(T, -1), # set this negative or non-finite to not do maximize ME.
+    unique_J_avg_atol::T = convert(T, 1e-6), # set this negative or non-finite to not do maximize ME.
     ) where T <: AbstractFloat
 
     Phys = Vector{PhysicalParamsType{T}}(undef, length(load_paths))

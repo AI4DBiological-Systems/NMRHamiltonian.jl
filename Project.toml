@@ -1,7 +1,7 @@
 name = "NMRHamiltonian"
 uuid = "d73005cc-2eb2-45b3-9785-29d07aec07ac"
 authors = ["Roy Chih Chung Wang"]
-version = "0.5.2"
+version = "0.5.3"
 
 [deps]
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
