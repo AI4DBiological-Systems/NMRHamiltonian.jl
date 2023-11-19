@@ -211,3 +211,20 @@ struct MoleculeSpinSystem{T}
 end
 
 
+###### internals, IO physical parameters.
+
+struct CSJContainer{T}
+    J_inds_sys::Vector{Vector{Tuple{Int,Int}}}
+    J_inds_sys_local
+    J_IDs_sys::Vector{Vector{Tuple{Int,Int}}}
+
+    J_vals_sys::Vector{Vector{T}}
+    H_inds_sys::Vector{Vector{Int}}
+
+    cs_sys::Vector{Vector{T}}
+
+    H_inds_singlets::Vector{Vector{Int64}}
+    cs_singlets::Vector{T}
+    H_inds::Vector{Int64}
+    J_inds::Vector{Tuple{Int64, Int64}}
+end

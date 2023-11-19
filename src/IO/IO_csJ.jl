@@ -102,13 +102,13 @@ function setupcsJ(
     H_inds_singlets = Vector{Vector{Int}}(undef, 0)
     cs_singlets = Vector{T}(undef, 0)
 
-    for i = 1:length(systems_g)
+    for i in eachindex(systems_g)
 
         H_inds_i = systems_g[i]
 
         if length(H_inds_i) > 1
 
-            cs = collect( dict_H_inds_to_css[H_inds_i[l]] for l = 1:length(H_inds_i) )
+            cs = collect( dict_H_inds_to_css[H_inds_i[l]] for l in eachindex(H_inds_i) )
 
             # check if cs is a vector of the same value, up to an absolute tolerance of `unique_cs_tol`.
             if all(isapprox.(cs, cs[1], atol = unique_cs_tol))
@@ -150,8 +150,10 @@ function setupcsJ(
 
     @assert length(H_inds_singlets) == length(cs_singlets)
 
-    return J_inds_sys, J_inds_sys_local, J_IDs_sys, J_vals_sys, H_inds_sys,
-        cs_sys, H_inds_singlets, cs_singlets, H_inds, J_inds, g
+    return CSJContainer(
+        J_inds_sys, J_inds_sys_local, J_IDs_sys, J_vals_sys, H_inds_sys,
+        cs_sys, H_inds_singlets, cs_singlets, H_inds, J_inds,
+    ), g
 end
 
 function removeredundantsinglets(H_inds::Vector{Vector{Int}}, cs_singlets::Vector{T}) where T <: AbstractFloat
@@ -182,7 +184,7 @@ function convertJindsglobaltolocal(
     J_inds_sys::Vector{Vector{Tuple{Int,Int}}},
     )
 
-    @assert length(H_inds_sys) == length(J_inds_sys)
+    @assert length(H_inds_sys) == length(J_inds_sys) # same number of spin systems.
     N_systems = length(H_inds_sys)
 
     J_inds_sys_local = Vector{Vector{Tuple{Int,Int}}}(undef, N_systems)
@@ -194,8 +196,37 @@ function convertJindsglobaltolocal(
 
         conversion_dict = Dict(x .=> collect(1:length(x)))
 
-        J_inds_sys_local[i] = collect( (conversion_dict[J[k][1]], conversion_dict[J[k][2]]) for k = 1:length(J) )
+        J_inds_sys_local[i] = collect(
+            (conversion_dict[J[k][1]], conversion_dict[J[k][2]])
+            for k in eachindex(J)
+        )
     end
 
     return J_inds_sys_local
+end
+
+function convertJindslocaltoglobal(
+    H_inds_sys::Vector{Vector{Int}},
+    J_inds_sys_local::Vector{Vector{Tuple{Int,Int}}},
+    )
+
+    @assert length(H_inds_sys) == length(J_inds_sys_local) # same number of spin systems.
+    N_systems = length(H_inds_sys)
+
+    J_inds_sys = Vector{Vector{Tuple{Int,Int}}}(undef, N_systems)
+
+    for i = 1:N_systems
+
+        x = H_inds_sys[i]
+        J = J_inds_sys_local[i]
+
+        conversion_dict = Dict(collect(1:length(x)) .=> x)
+
+        J_inds_sys[i] = collect(
+            (conversion_dict[J[k][1]], conversion_dict[J[k][2]])
+            for k in eachindex(J)
+        )
+    end
+
+    return J_inds_sys
 end

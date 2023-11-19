@@ -11,7 +11,7 @@ function getmageqmolecule(
     dict_H_IDs_to_css::Dict{Int, T},
     dict_J_ID_to_val::Dict{Tuple{Int, Int}, T},
     J_IDs::Vector{Tuple{Int, Int}};
-    atol::T = convert(T, 1e-6),
+    unique_cs_atol::T = convert(T, 1e-6),
     ) where T <: AbstractFloat
 
     C_g = Graphs.maximal_cliques(g)
@@ -30,7 +30,7 @@ function getmageqmolecule(
             dict_ind_to_H_ID,
             dict_H_inds_to_css,
             dict_H_IDs_to_css, dict_J_ID_to_val, J_IDs;
-            atol = atol,
+            atol = unique_cs_atol,
         )
 
         mag_eq_inds = combinetransitiveeqgroups(mag_eq_inds0)
@@ -116,13 +116,13 @@ function getmageqIDs(
 
         # check magnetic equivalence for the chemically equivalent entries in `unique_cs_inds`.
         pass_flags = collect( checkmageq(unique_cs_inds[k], cs_IDs, dict_J_ID_to_val,
-            dict_H_IDs_to_css, J_IDs; atol = atol) for k = 1:length(unique_cs_inds) )
+            dict_H_IDs_to_css, J_IDs; atol = atol) for k in eachindex(unique_cs_inds) )
 
         # store result.
-        common_cs_IDs = collect( cs_IDs[unique_cs_inds[k]] for k = 1:length(unique_cs_inds) )
+        common_cs_IDs = collect( cs_IDs[unique_cs_inds[k]] for k in eachindex(unique_cs_inds) )
         C_IDs_mag_eq[i] = common_cs_IDs[pass_flags]
 
-        common_cs_inds = collect( cs_inds[unique_cs_inds[k]] for k = 1:length(unique_cs_inds) )
+        common_cs_inds = collect( cs_inds[unique_cs_inds[k]] for k in eachindex(unique_cs_inds) )
         C_inds_mag_eq[i] = common_cs_inds[pass_flags]
 
         if length(common_cs_IDs[pass_flags]) > 2
@@ -256,7 +256,7 @@ function checkmageq(
 
     # check J-values.
     pass_test_J_flag = true
-    for k = 1:length(t_IDs)
+    for k in eachindex(t_IDs)
 
         J_t = collect( getJfromdict(t_IDs[k], base_ID, dict_J_ID_to_val) for base_ID in common_cs_IDs )
 
@@ -344,10 +344,10 @@ function getmageqinfo(
         } where T <: AbstractFloat
     
     # parse the spin systems and singlets.
-    J_inds_sys, J_inds_sys_local, J_IDs_sys, J_vals_sys, H_inds_sys,
-    cs_sys, H_inds_singlets, cs_singlets, H_inds, J_inds, g = setupcsJ(
+    csj, g = setupcsJ(
         H_IDs, H_css, J_IDs, J_vals,
     )
+    H_inds_sys, H_inds, J_inds = csj.H_inds_sys, csj.H_inds, csj.J_inds
 
     # set up look-up.
     dict_H_IDs_to_css = Dict(H_IDs .=> H_css)
@@ -356,16 +356,16 @@ function getmageqinfo(
     dict_ind_to_H_ID = Dict( collect(1:length(H_IDs)) .=> H_IDs)
 
     dict_J_ID_to_val = Dict(J_IDs .=> J_vals)
-    dict_J_ind_to_val = Dict(J_inds .=> J_vals)
+    #dict_J_ind_to_val = Dict(J_inds .=> J_vals)
 
-    dict_J_ID_to_ind = Dict(J_IDs .=> J_inds)
-    dict_J_ind_to_ID = Dict(J_inds .=> J_IDs)
+    #dict_J_ID_to_ind = Dict(J_IDs .=> J_inds)
+    #dict_J_ind_to_ID = Dict(J_inds .=> J_IDs)
 
     #
     mag_eq_sys_inds_local, mag_eq_sys_IDs,
     mag_eq_sys_inds_global = getmageqmolecule(g,
     H_inds_sys, dict_ind_to_H_ID, dict_H_inds_to_css,
-    dict_H_IDs_to_css, dict_J_ID_to_val, J_IDs; atol = unique_cs_atol)
+    dict_H_IDs_to_css, dict_J_ID_to_val, J_IDs; unique_cs_atol = unique_cs_atol)
 
     return mag_eq_sys_inds_local, mag_eq_sys_IDs,
     mag_eq_sys_inds_global

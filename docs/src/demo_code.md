@@ -13,7 +13,7 @@ HAM = NMRHamiltonian # so we don't need to type NMRHamiltonian. everytime we ref
 using DataDeps, Tar, CodecZlib
 
 using LinearAlgebra
-import PythonPlot # do Pkg.add("PythonPlot") if you're missing this library.
+import PythonPlot as PLT # do Pkg.add("PythonPlot") if you're missing this library.
 
 # the same function for ensuring the dataset at 10.5281/zenodo.8174261 is downloaded.
 
@@ -72,7 +72,7 @@ function extractuncompress(src_path, dest_path)
 end
 
 # This was tested in a REPL environment, not a notebook environment. You might need to modify this for notebooks to get it to display the plots.
-PythonPlot.close("all")
+PLT.close("all")
 fig_num = 1
 
 # select the AbstractFloat data type you want to use. Anything lower than Float32 will result in numerical precision-related errors in our tests.
@@ -212,12 +212,12 @@ q = uu->evalzerophasecl1Darray(uu, a, F, λ0)
 q_U = q.(U_rad)
 
 # plot.
-PythonPlot.figure(fig_num)
+PLT.figure(fig_num)
 fig_num += 1
 
-PythonPlot.plot(P, real.(q_U))
+PLT.plot(P, real.(q_U))
 
-PythonPlot.gca().invert_xaxis()
-PythonPlot.ylabel("real part")
-PythonPlot.title("spectrum of $(molecule_entries[molecule_select]), spin system $(spin_system_select)")
+PLT.gca().invert_xaxis()
+PLT.ylabel("real part")
+PLT.title("spectrum of $(molecule_entries[molecule_select]), spin system $(spin_system_select)")
 ```

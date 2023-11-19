@@ -333,46 +333,6 @@ function savecouplinginfo(
     return nothing
 end
 
-function extractcouplinginfo(Phy::PhysicalParamsType{T}) where T
-
-    ID_LUT = Phy.H_IDs
-
-    H_IDs = Vector{Int}(undef, 0)
-    H_css = Vector{T}(undef, 0)
-
-    # non-singlets.
-    for i in eachindex(Phy.cs_sys)
-        push!(H_css, Phy.cs_sys[i]...)
-        push!(H_IDs, ID_LUT[Phy.H_inds_sys[i]]...)
-    end
-
-    # singlets.
-    for i in eachindex(Phy.cs_singlets)
-        cs_i = Phy.cs_singlets[i]
-        H_IDs_i = Phy.H_inds_singlets[i]
-
-        cs_update = collect( cs_i for _ in eachindex(H_IDs_i))
-        H_ID_update = collect( ID_LUT[H_IDs_i[j]] for j in eachindex(H_IDs_i) )
-
-        push!(H_css, cs_update...)
-        push!(H_IDs, H_ID_update...)
-    end
-
-    # J-coupling.
-    J_IDs = Vector{Tuple{Int,Int}}(undef, 0)
-    J_vals = Vector{T}(undef, 0)
-    for i in eachindex(Phy.cs_sys)
-        push!(J_vals, Phy.J_vals_sys[i]...)
-        
-        tmp = collect(
-            (ID_LUT[Phy.J_inds_sys[i][k][1]], ID_LUT[Phy.J_inds_sys[i][k][2]])
-            for k in eachindex(Phy.J_inds_sys[i])
-        )
-        push!(J_IDs, tmp...)
-    end
-
-    return H_IDs, H_css, J_IDs, J_vals
-end
 
 function createnamemappingJSON(
     save_path::String,

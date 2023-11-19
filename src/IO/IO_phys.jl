@@ -464,25 +464,55 @@ function getphysicalparameters(
     ::Type{T},
     load_paths::Vector{String};
     unique_cs_atol::T = convert(T, 1e-6),
+    unique_J_avg_atol::T = convert(T, -1), # set this negative or non-finite to not do maximize ME.
     ) where T <: AbstractFloat
 
     Phys = Vector{PhysicalParamsType{T}}(undef, length(load_paths))
 
     for n in eachindex(load_paths)
+        #@show load_paths[n]
         H_IDs, H_css, J_IDs, J_vals = loadcouplinginfojson(T, load_paths[n])
 
-        J_inds_sys, J_inds_sys_local, J_IDs_sys, J_vals_sys, H_inds_sys,
-            cs_sys, H_inds_singlets, cs_singlets, H_inds, J_inds,
-            g = setupcsJ(H_IDs, H_css, J_IDs, J_vals)
-
-        ME, _ = getmageqinfo(H_IDs, H_css, J_IDs, J_vals; unique_cs_atol = unique_cs_atol)
-
-        Phys[n] = PhysicalParamsType(H_IDs, H_inds_sys, cs_sys,
-            H_inds_singlets, cs_singlets, J_inds_sys, J_inds_sys_local,
-            J_vals_sys, ME)
+        Phys[n] = getPhysicalParamsType(
+            H_IDs, H_css, J_IDs, J_vals; unique_cs_atol = unique_cs_atol,
+        )
     end
 
+    # maximize ME if unique_J_avg_atol
+    if unique_J_avg_atol > zero(T)
+        Phys = createmaximalME(
+            Phys;
+            unique_cs_atol = unique_cs_atol,
+            unique_J_avg_atol = unique_J_avg_atol,
+        )
+    end
+    
     return Phys
+end
+
+function getPhysicalParamsType(
+    H_IDs::Vector{Int},
+    H_css::Vector{T},
+    J_IDs,
+    J_vals::Vector{T};
+    unique_cs_atol::T = convert(T, 1e-6),
+    ) where T <: AbstractFloat
+
+    csj, g = setupcsJ(H_IDs, H_css, J_IDs, J_vals)
+
+    ME, _ = getmageqinfo(H_IDs, H_css, J_IDs, J_vals; unique_cs_atol = unique_cs_atol)
+
+    return PhysicalParamsType(
+        H_IDs,
+        csj.H_inds_sys,
+        csj.cs_sys,
+        csj.H_inds_singlets,
+        csj.cs_singlets,
+        csj.J_inds_sys,
+        csj.J_inds_sys_local,
+        csj.J_vals_sys,
+        ME,
+    )
 end
 
 function getloadpaths(
@@ -507,3 +537,90 @@ function getloadpaths(
 
     return load_paths, dict_molecule_to_filename
 end
+
+#### write Phy to disk.
+function extractcouplinginfo(P::PhysicalParamsType{T}) where T
+
+    # need to prepare H_IDs, H_css, J_IDs, J_vals
+
+    H_IDs = P.H_IDs
+    node2ID = Dict(1:length(H_IDs) .=> H_IDs)
+    #ID2node = Dict(H_IDs .=> 1:length(H_IDs))
+
+    # prepare H_IDs, H_css.
+    H_nodes = vcat(
+        collect(Iterators.flatten( P.H_inds_sys )),
+        collect(Iterators.flatten( P.H_inds_singlets )),
+    )
+
+    cs_singlets_full = collect( 
+        ones(T, length(P.H_inds_singlets[i])) .* P.cs_singlets[i]
+        for i in eachindex(P.cs_singlets)
+    )
+    H_css_wrt_nodes = vcat(
+        collect(Iterators.flatten(P.cs_sys)),
+        collect(Iterators.flatten(cs_singlets_full))
+    )
+
+
+    inds = sortperm(H_nodes)
+    H_css = H_css_wrt_nodes[inds]
+
+    # [H_IDs H_css] # should match the origin JSON. # debug.
+
+    # prepare J_IDs, J_vals
+    J_IDs_wrt_nodes = collect(Iterators.flatten(P.J_inds_sys))
+    
+    J_IDs = Vector{Tuple{Int,Int}}(undef, length(J_IDs_wrt_nodes))
+    for m in eachindex(J_IDs_wrt_nodes)
+        src = node2ID[J_IDs_wrt_nodes[m][begin]]
+        dest = node2ID[J_IDs_wrt_nodes[m][end]]
+        J_IDs[m] = (src, dest)
+    end
+
+    J_vals = collect(Iterators.flatten(P.J_vals_sys))
+
+    return H_IDs, H_css, J_IDs, J_vals
+end
+
+## old one, should do the same thing.
+# function extractcouplinginfo(Phy::PhysicalParamsType{T}) where T
+
+#     ID_LUT = Phy.H_IDs
+
+#     H_IDs = Vector{Int}(undef, 0)
+#     H_css = Vector{T}(undef, 0)
+
+#     # non-singlets.
+#     for i in eachindex(Phy.cs_sys)
+#         push!(H_css, Phy.cs_sys[i]...)
+#         push!(H_IDs, ID_LUT[Phy.H_inds_sys[i]]...)
+#     end
+
+#     # singlets.
+#     for i in eachindex(Phy.cs_singlets)
+#         cs_i = Phy.cs_singlets[i]
+#         H_IDs_i = Phy.H_inds_singlets[i]
+
+#         cs_update = collect( cs_i for _ in eachindex(H_IDs_i))
+#         H_ID_update = collect( ID_LUT[H_IDs_i[j]] for j in eachindex(H_IDs_i) )
+
+#         push!(H_css, cs_update...)
+#         push!(H_IDs, H_ID_update...)
+#     end
+
+#     # J-coupling.
+#     J_IDs = Vector{Tuple{Int,Int}}(undef, 0)
+#     J_vals = Vector{T}(undef, 0)
+#     for i in eachindex(Phy.cs_sys)
+#         push!(J_vals, Phy.J_vals_sys[i]...)
+        
+#         tmp = collect(
+#             (ID_LUT[Phy.J_inds_sys[i][k][1]], ID_LUT[Phy.J_inds_sys[i][k][2]])
+#             for k in eachindex(Phy.J_inds_sys[i])
+#         )
+#         push!(J_IDs, tmp...)
+#     end
+
+#     return H_IDs, H_css, J_IDs, J_vals
+# end

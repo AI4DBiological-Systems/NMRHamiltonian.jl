@@ -1,18 +1,11 @@
+# run a.jl first.
 
-import NMRHamiltonian
-
-using DataDeps, CodecZlib, Tar
-
-using LinearAlgebra
-import PythonPlot # do Pkg.add("PythonPlot") if this is missing.
-
-include("./helpers/data.jl") # use DataDeps.jl and Tar.jl to download and extract the sample coupling values.
 include("./helpers/utils.jl")
 
-PythonPlot.close("all")
+PLT.close("all")
 fig_num = 1
 
-#PythonPlot.matplotlib["rcParams"][:update](["font.size" => 22, "font.family" => "serif"])
+#PLT.matplotlib["rcParams"][:update](["font.size" => 22, "font.family" => "serif"])
 
 #T = Float64
 T = Float32
@@ -40,7 +33,7 @@ fs, SW, ν_0ppm = HAM.getpresetspectrometer(T, "700")
 
 ## pull the sample coupling values into dictionary structures.
 
-root_data_path = getdatapath() # coupling values data repository root path
+root_data_path = DS.getdatapath(DS.NMR2023()) # coupling values data repository root path
 
 H_params_path = joinpath(root_data_path, "coupling_info") # folder of coupling values. # replace with your own values in actual usage.
 
@@ -157,14 +150,14 @@ q = uu->evalzerophasecl1Darray(uu, a, F, λ0)
 q_U = q.(U_rad)
 
 # plot.
-PythonPlot.figure(fig_num)
+PLT.figure(fig_num)
 fig_num += 1
 
-PythonPlot.plot(P, real.(q_U))
+PLT.plot(P, real.(q_U))
 
-PythonPlot.gca().invert_xaxis()
-PythonPlot.ylabel("real part")
-PythonPlot.title("spectrum of $(molecule_entries[molecule_select]), spin system $(spin_system_select)")
+PLT.gca().invert_xaxis()
+PLT.ylabel("real part")
+PLT.title("spectrum of $(molecule_entries[molecule_select]), spin system $(spin_system_select)")
 
 ###### round-trip tests.
 

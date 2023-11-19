@@ -1,8 +1,10 @@
 
 # get unique values of css_sys in graph.jl.
 # It is denoted here as cs.
-function cstopcs(   cs::Vector{Vector{T}},
-    cs_LUT::Vector{Vector{Vector{Int}}}) where T <: AbstractFloat
+function cstopcs(
+    cs::Vector{Vector{T}},
+    cs_LUT::Vector{Vector{Vector{Int}}},
+    ) where T <: AbstractFloat
 
     N_subsystems = length(cs)
     p_cs = Vector{Vector{T}}(undef, N_subsystems)

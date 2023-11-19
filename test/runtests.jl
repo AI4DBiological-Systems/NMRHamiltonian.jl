@@ -2,8 +2,7 @@
 import NMRHamiltonian
 const HAM = NMRHamiltonian
 
-using DataDeps
-using Tar, CodecZlib
+import PublicationDatasets as DS
 
 using LinearAlgebra
 
@@ -12,7 +11,6 @@ using Test
 import JSON3
 import BSON
 
-include("../examples/helpers/data.jl") # use DataDeps.jl and Tar.jl to download and extract the sample coupling values.
 include("../examples/helpers/utils.jl")
 include("../examples/helpers/roundtrip.jl")
 
@@ -20,7 +18,7 @@ include("../examples/helpers/roundtrip.jl")
 @testset "simulate, round-trip, MSPs" begin
     # Write your tests here.
     
-    root_data_path = getdatapath() # coupling values data repository root path
+    root_data_path = DS.getdatapath(DS.NMR2023()) # coupling values data repository root path
 
     H_params_path = joinpath(root_data_path, "coupling_info") # folder of coupling values. # replace with your own values in actual usage.
 
@@ -146,3 +144,62 @@ include("../examples/helpers/roundtrip.jl")
 
 end
 
+@testset "load coupling, round-trip" begin
+    
+    T = Float64
+    unique_cs_atol = convert(T, 1e-6)
+
+    root_data_path = DS.getdatapath(DS.NMR2023()) # coupling values data repository root path
+
+    H_params_path = joinpath(root_data_path, "coupling_info") # folder of coupling values. # replace with your own values in actual usage.
+
+    molecule_mapping_root_path = joinpath(
+        root_data_path,
+        "molecule_name_mapping",
+    )
+    molecule_mapping_file_path = joinpath(
+        molecule_mapping_root_path,
+        #"select_molecules.json",
+        "GISSMO_names.json",
+    )
+
+    dict = HAM.JSON3.read(molecule_mapping_file_path)
+
+    names = collect( String(k) for k in keys(dict) )
+
+    Phys = collect(
+        HAM.getphysicalparameters(
+            T,
+            [names[k];],
+            H_params_path,
+            molecule_mapping_file_path;
+            unique_cs_atol = unique_cs_atol,
+        )[begin]
+        for k in eachindex(names)
+    )
+
+    for n in eachindex(Phys)
+        P = Phys[n]
+
+        H_IDs, H_css, J_IDs, J_vals = HAM.extractcouplinginfo(P)
+        P_rec = HAM.getPhysicalParamsType(H_IDs, H_css, J_IDs, J_vals; unique_cs_atol = unique_cs_atol)
+
+        for s in propertynames(P)
+
+            # exclude ME. write the test for it later. [[[3, 4], [2, 1]]] vs. [[[3, 4], [2, 1]]]
+
+            if s != :ME
+                LHS = getproperty(P, s)
+                RHS = getproperty(P_rec, s)
+
+                if typeof(LHS) == Vector{Vector{Int}}
+
+                    # nested integer array. Use sets to account for order permutations.
+                    @test Set(Set.(LHS)) == Set(Set.(RHS))
+                else
+                    @test LHS == RHS
+                end
+            end
+        end
+    end
+end

@@ -1,6 +1,5 @@
 module NMRHamiltonian
 
-
 using LinearAlgebra
 import Kronecker, Graphs
 import JSON3
@@ -37,6 +36,9 @@ include("./IO/IO_mag_eq.jl")
 include("./IO/IO_csJ.jl")
 include("./IO/cs_parse.jl")
 include("./IO/IO_phys.jl")
+
+
+include("./IO/maximal_ME.jl") # generate Phys from an existing Phys, such that ME is maximized.
 
 # spin Hamiltonian.
 include("./SH/SH.jl")
