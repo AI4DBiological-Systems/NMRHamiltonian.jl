@@ -3,42 +3,34 @@
 
 # Returns the unique values of `a_in`, with absolute tolerance `atol`, and the indices for each unique value.
 # """
-function uniqueinds(a_in::Vector{T}; atol::T = convert(T, 1e-6)) where T <: AbstractFloat
+function uniqueinds(a::Vector{T}; digits::Int = 6) where T <: AbstractFloat
 
-    if length(a_in) < 2
-        inds = Vector{Vector{Int}}(undef, length(a_in))
+    atol = digits2atol(T, digits)
 
-        if length(a_in) == 1
-            inds[1] = Vector{Int}(undef, 1)
-            inds[1][1] = 1
-        end
+    b = unique(xx -> round(xx, digits = digits), a)
+    idx = unique(zz -> round(a[zz], digits = digits), 1:length(a))
 
-        return copy(a_in), inds
-    end
+    inds_b = Vector{Vector{Int}}(undef, length(idx))
+    for i in eachindex(idx)
+        
+        k = idx[i]
 
-    a = copy(a_in)
-    inds_a = collect(1:length(a))
-
-    b = Vector{T}(undef, 0)
-    inds_b = Vector{Vector{Int}}(undef, 0)
-
-    while !isempty(a)
-
-        target = pop!(a)
-        inds = findall(xx->isapprox(target, xx; atol = atol), a)
-
-        target_ind = pop!(inds_a)
-
-        # save to output.
-        push!(b, target)
-        push!(inds_b, [target_ind; inds_a[inds]])
-
-        # delete saved.
-        deleteat!(a, inds)
-        deleteat!(inds_a, inds)
+        inds_b[i] = findall(
+            xx->isapprox(
+                xx,
+                round(a[k], digits = digits);
+                atol = atol,
+            ),
+            a,
+        )
     end
 
     return b, inds_b
+end
+
+function digits2atol(::Type{T}, digits::Int)::T where T <: AbstractFloat
+
+    return convert(T, 10) ^ (-digits)
 end
 
 # """

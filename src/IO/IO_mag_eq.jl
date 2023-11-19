@@ -11,7 +11,7 @@ function getmageqmolecule(
     dict_H_IDs_to_css::Dict{Int, T},
     dict_J_ID_to_val::Dict{Tuple{Int, Int}, T},
     J_IDs::Vector{Tuple{Int, Int}};
-    unique_cs_atol::T = convert(T, 1e-6),
+    unique_cs_digits::Int = 6,
     ) where T <: AbstractFloat
 
     C_g = Graphs.maximal_cliques(g)
@@ -30,7 +30,7 @@ function getmageqmolecule(
             dict_ind_to_H_ID,
             dict_H_inds_to_css,
             dict_H_IDs_to_css, dict_J_ID_to_val, J_IDs;
-            atol = unique_cs_atol,
+            unique_cs_digits = unique_cs_digits,
         )
 
         mag_eq_inds = combinetransitiveeqgroups(mag_eq_inds0)
@@ -96,8 +96,10 @@ function getmageqIDs(
     dict_H_IDs_to_css::Dict{Int, T},
     dict_J_ID_to_val::Dict{Tuple{Int, Int}, T},
     J_IDs::Vector{Tuple{Int, Int}};
-    atol::T = convert(T, 1e-6),
+    unique_cs_digits::Int = 6,
     ) where T <: AbstractFloat
+
+    atol = digits2atol(T, unique_cs_digits)
 
     # traverse each maximally connected cliques.
     C_IDs_mag_eq = Vector{Vector{Vector{Int}}}(undef, length(C))
@@ -112,7 +114,7 @@ function getmageqIDs(
         # unique_cs = unique(round.(cs, digits = cs_round_digits))
         # unique_cs_inds = collect( inds = findall(xx->isapprox(unique_cs[k], xx; atol = atol), cs) for k = 1:length(unique_cs) )
 
-        unique_cs, unique_cs_inds = uniqueinds(cs; atol = atol)
+        _, unique_cs_inds = uniqueinds(cs; digits = unique_cs_digits)
 
         # check magnetic equivalence for the chemically equivalent entries in `unique_cs_inds`.
         pass_flags = collect( checkmageq(unique_cs_inds[k], cs_IDs, dict_J_ID_to_val,
@@ -336,7 +338,7 @@ function getmageqinfo(
     H_css::Vector{T},
     J_IDs::Vector{Tuple{Int, Int}},
     J_vals::Vector{T};
-    unique_cs_atol::T = convert(T, 1e-6),
+    unique_cs_digits::Int = 6,
     )::Tuple{
         Vector{Vector{Vector{Int}}},
         Vector{Vector{Vector{Int}}},
@@ -362,11 +364,12 @@ function getmageqinfo(
     #dict_J_ind_to_ID = Dict(J_inds .=> J_IDs)
 
     #
-    mag_eq_sys_inds_local, mag_eq_sys_IDs,
-    mag_eq_sys_inds_global = getmageqmolecule(g,
-    H_inds_sys, dict_ind_to_H_ID, dict_H_inds_to_css,
-    dict_H_IDs_to_css, dict_J_ID_to_val, J_IDs; unique_cs_atol = unique_cs_atol)
+    mag_eq_sys_inds_local, mag_eq_sys_IDs, mag_eq_sys_inds_global = getmageqmolecule(
+        g,
+        H_inds_sys, dict_ind_to_H_ID, dict_H_inds_to_css,
+        dict_H_IDs_to_css, dict_J_ID_to_val, J_IDs;
+        unique_cs_digits = unique_cs_digits,
+    )
 
-    return mag_eq_sys_inds_local, mag_eq_sys_IDs,
-    mag_eq_sys_inds_global
+    return mag_eq_sys_inds_local, mag_eq_sys_IDs, mag_eq_sys_inds_global
 end

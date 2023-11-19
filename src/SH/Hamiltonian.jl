@@ -288,9 +288,6 @@ function getaΩ(
     #@show typeof(Q), typeof(IyQs)
 
     ### get order of coherence.
-    #@time p, M_array = getorderofcoherence(Iz_full, Q) # TODO speed this up.
-    #println("timing coherence")
-    #@time p, M_array = getorderofcoherence(Iz_full, Q)
     p, M_array = getorderofcoherence(Iz_full, Q)
 
     a = Vector{T}(undef, M*M)

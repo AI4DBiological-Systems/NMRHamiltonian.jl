@@ -31,12 +31,18 @@ molecule_entries = [
 # machine values taken from the BMRB 700 MHz 20 mM glucose experiment.
 fs, SW, ν_0ppm = HAM.getpresetspectrometer(T, "700")
 
-## pull the sample coupling values into dictionary structures.
+config = HAM.SHConfig{T}(
+    coherence_tol = convert(T, 0.01),
+    relative_α_threshold = convert(T, 0.005),
+    tol_radius_1D = convert(T, 0.1), # strictly between 0 and 1. The lower, the better the approximation, but would a larger partition (i.e. more resonance groups).
+    nuc_factor = convert(T, 1.5),
+)
 
+# ## Identify where to get the reference J-coupling and chemical shift files.
+
+# ### If we're using the J-coupling files from literature, as assembled by PublicationDatasets.jl.
 root_data_path = DS.getdatapath(DS.NMR2023()) # coupling values data repository root path
-
 H_params_path = joinpath(root_data_path, "coupling_info") # folder of coupling values. # replace with your own values in actual usage.
-
 molecule_mapping_root_path = joinpath(
     root_data_path,
     "molecule_name_mapping",
@@ -46,12 +52,9 @@ molecule_mapping_file_path = joinpath(
     "select_molecules.json",
 )
 
-config = HAM.SHConfig{T}(
-    coherence_tol = convert(T, 0.01),
-    relative_α_threshold = convert(T, 0.005),
-    tol_radius_1D = convert(T, 0.1), # strictly between 0 and 1. The lower, the better the approximation, but would a larger partition (i.e. more resonance groups).
-    nuc_factor = convert(T, 1.5),
-)
+# ### if we want to use the adjusted coupling infomation. # see adjust_phys.jl for how we generated these files.
+molecule_mapping_file_path = "./files/adjusted_molecules.json"
+H_params_path = "./files/"
 
 ### end inputs.
 
@@ -63,7 +66,7 @@ println("Timing: getphysicalparameters")
     molecule_entries,
     H_params_path,
     molecule_mapping_file_path;
-    unique_cs_atol = convert(T, 1e-6),
+    unique_cs_digits = 6,
 )
 
 println("Timing: simulate()")

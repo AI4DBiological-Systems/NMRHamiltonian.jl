@@ -200,8 +200,7 @@ function loadandsimulate(
         tol_radius_1D = convert(T, 0.1), # strictly between 0 and 1. The lower, the better the approximation, but would a larger partition (i.e. more resonance groups).
         nuc_factor = convert(T, 1.5),
     ),
-    unique_cs_atol::T = convert(T, 1e-6),
-    unique_J_avg_atol::T = convert(T, 1e-6),
+    unique_cs_digits::Int = 6,
     ) where T <: AbstractFloat
 
     fs, SW, ν_0ppm = getpresetspectrometer(T, machine_settings_tag)
@@ -214,8 +213,7 @@ function loadandsimulate(
         H_params_path,
         molecule_mapping_file_path,
         config;
-        unique_cs_atol = unique_cs_atol,
-        unique_J_avg_atol = unique_J_avg_atol,
+        unique_cs_digits = unique_cs_digits,
     )
 end
 
@@ -227,8 +225,7 @@ function loadandsimulate(
     H_params_path::String,
     molecule_mapping_file_path::String,
     config::SHConfig{T};
-    unique_cs_atol::T = convert(T, 1e-6),
-    unique_J_avg_atol::T = convert(T, 1e-6),
+    unique_cs_digits::Int = 6,
     )::Tuple{
         Vector{PhysicalParamsType{T}},
         Vector{SHType{T}},
@@ -240,8 +237,7 @@ function loadandsimulate(
         molecule_entries,
         H_params_path,
         molecule_mapping_file_path;
-        unique_cs_atol = unique_cs_atol,
-        unique_J_avg_atol = unique_J_avg_atol,
+        unique_cs_digits = unique_cs_digits,
     )
 
     As, MSPs = simulate(

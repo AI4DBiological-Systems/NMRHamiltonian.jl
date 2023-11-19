@@ -4,6 +4,10 @@ Given chemical shifts and J-coupling values, produce simulated amplitude and fre
 # Documentation
 [https://AI4DBiological-Systems.github.io/NMRHamiltonian.jl/](https://AI4DBiological-Systems.github.io/NMRHamiltonian.jl/)
 
+See `/examples/adjust_phys.jl` for how to modify and save J-coupling values read from file, such that the magnetic equivalence of the molecule is maximized.
+
+The tutorial in the documentation is based on `/examples/simulate.jl`.
+
 # Install
 Add the custom registries, then the package.
 ```

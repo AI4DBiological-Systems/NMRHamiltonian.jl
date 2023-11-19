@@ -1,32 +1,5 @@
 
 
-# not type stable.
-# args[k] much be a Vector of length(labels).
-function assembledict(molecule_entries::Vector{NT},
-    labels::Vector{LT},
-    args...) where {NT,LT}
-
-    N_labels = length(labels)
-    @assert length(args) == N_labels # future: add error message.
-
-    N_entries = length(molecule_entries)
-    for j in eachindex(args)
-        @assert length(args[j]) == N_entries # future: add error message.
-    end
-
-    dict_out = Dict()
-
-    for n in eachindex(molecule_entries)
-        dict_out[molecule_entries[n]] = Dict()
-
-        for j in eachindex(labels)
-            merge!(dict_out[molecule_entries[n]], Dict(labels[j] => args[j][n]))
-        end
-    end
-
-    return dict_out
-end
-
 # makes a folder at `file_folder` if it doesn't exist.
 """
 saveasJSON(
@@ -43,8 +16,7 @@ config = HAM.SHConfig{T}(
     tol_radius_1D = convert(T, 0.1),
     nuc_factor = convert(T, 1.5),
 )
-unique_cs_atol = convert(T, 1e-6)
-unique_J_avg_atol = convert(T, 1e-6)
+unique_cs_digits = 6
 
 Phys, As, MSPs = HAM.loadandsimulate(
     T,
@@ -53,8 +25,7 @@ Phys, As, MSPs = HAM.loadandsimulate(
     H_params_path,
     molecule_mapping_file_path;
     config = config,
-    unique_cs_atol = unique_cs_atol,
-    unique_J_avg_atol = unique_J_avg_atol,
+    unique_cs_digits = unique_cs_digits,
     
 )
 ```

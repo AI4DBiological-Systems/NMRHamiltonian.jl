@@ -1,13 +1,60 @@
 
+function canmaximizeME(
+    P::PhysicalParamsType{T};
+    unique_cs_digits::Int = 6,
+    ) where T
+
+    #unique_cs_atol = digits2atol(T, unique_cs_digits)
+
+    cs_sys, ME = P.cs_sys, P.ME
+
+    for i in eachindex(cs_sys)
+        cs = cs_sys[i]
+        unique_cs, unique_cs_inds = uniqueinds(P.cs_sys[i]; digits = unique_cs_digits)
+        
+        if length(unique_cs) != length(cs)
+            # there are identical chemical shifts in this spin system.
+            @show unique_cs, cs
+
+            if isempty(ME[i])
+                return true
+            end
+
+            for k in eachindex(unique_cs_inds)
+                k_set = Set(unique_cs_inds[k])
+                ind = findfirst(xx->(Set(xx) == k_set), ME[i])
+
+                if isnothing(ind) && length(k_set) > 1 # exclude the singleton ME, since P.ME[i] only stores non-singleton ME subsets.
+                    @show k_set, ME[i]
+                    return true
+                end
+            end
+        end
+    end
+
+    return false
+end
+
 function createmaximalME(
     Phys_in::Vector{PhysicalParamsType{T}};
-    unique_cs_atol = convert(T, 1e-6),
-    unique_J_avg_atol = convert(T, 1e-6),
-    ) where T
+    unique_cs_digits::Int = 6,
+    unique_J_avg_digits::Int = 6,
+    ) where T <: AbstractFloat
     
     Phys = Vector{PhysicalParamsType{T}}(undef, length(Phys_in))
     for n in eachindex(Phys)
-        Phys[n] = createmaximalME(Phys_in[n]; unique_cs_atol = unique_cs_atol, unique_J_avg_atol = unique_J_avg_atol)
+
+        if canmaximizeME(Phys_in[n]; unique_cs_digits = unique_cs_digits)
+        
+            Phys[n] = createmaximalME(
+                Phys_in[n];
+                unique_cs_digits = unique_cs_digits,
+                unique_J_avg_digits = unique_J_avg_digits,
+            )
+        else
+            # leave alone.
+            Phys[n] = deepcopy(Phys_in[n])
+        end
     end
 
     return Phys
@@ -15,8 +62,8 @@ end
 
 function createmaximalME(
     P_in::PhysicalParamsType{T};
-    unique_cs_atol = convert(T, 1e-6),
-    unique_J_avg_atol = convert(T, 1e-6),
+    unique_cs_digits::Int = 6,
+    unique_J_avg_digits::Int = 6,
     ) where T
     
     P = deepcopy(P_in)
@@ -36,7 +83,7 @@ function createmaximalME(
         # Then make a fully connected graph between the union of these subsets.
         # Initialize new connection weights (J-coupling) to zero.
         makeidenticalcsconnected!(
-            edge_weights, edges, h, cs; unique_cs_atol = unique_cs_atol,
+            edge_weights, edges, h, cs; unique_cs_digits = unique_cs_digits,
         )
 
         # add edges if the average J coupling connnected to each nuclei in a subset is the same. Recall nuceli in a subset have the same chemical shift here.
@@ -44,24 +91,24 @@ function createmaximalME(
             edge_weights,
             cs,
             edges;
-            unique_cs_atol = unique_cs_atol,
-            unique_J_avg_atol = unique_J_avg_atol,
+            unique_cs_digits = unique_cs_digits,
+            unique_J_avg_digits = unique_J_avg_digits,
         )
 
         # remove the edges that we added that have zero edge weights (zero J-coupling)
-        pruneedgeweights!(edge_weights, edges; atol = unique_J_avg_atol)
+        pruneedgeweights!(edge_weights, edges; atol = digits2atol(T, unique_J_avg_digits))
         
         edge_weights_sys[i] = edge_weights
         edges_sys[i] = edges
     end
 
     # overwrite P with new edges and weights.
-    P = updatephy(P, edges_sys, edge_weights_sys, unique_cs_atol)
+    P = updatephy(P, edges_sys, edge_weights_sys, unique_cs_digits)
 
     return P
 end
 
-function updatephy(P_in::PhysicalParamsType{T}, edges_sys, edge_weights_sys, unique_cs_atol::T) where T
+function updatephy(P_in::PhysicalParamsType{T}, edges_sys, edge_weights_sys, unique_cs_digits::Int) where T
 
     P = deepcopy(P_in)
     @assert length(P.cs_sys) == length(edges_sys) == length(edge_weights_sys)
@@ -85,7 +132,7 @@ function updatephy(P_in::PhysicalParamsType{T}, edges_sys, edge_weights_sys, uni
 
     # to get ME, just remake P.
     H_IDs, H_css, J_IDs, J_vals = extractcouplinginfo(P)
-    P_new = getPhysicalParamsType(H_IDs, H_css, J_IDs, J_vals; unique_cs_atol = unique_cs_atol)
+    P_new = getPhysicalParamsType(H_IDs, H_css, J_IDs, J_vals; unique_cs_digits = unique_cs_digits)
 
     return P_new
 end
@@ -112,10 +159,10 @@ function makeidenticalcsconnected!(
     edges::Vector{Tuple{Int,Int}}, # mutates.
     h, # mutates.
     cs::Vector{T};
-    unique_cs_atol = convert(T, 1e-6),
+    unique_cs_digits::Int = 6,
     ) where T
 
-    unique_cs, unique_cs_inds = uniqueinds(cs; atol = unique_cs_atol)
+    unique_cs, unique_cs_inds = uniqueinds(cs; digits = unique_cs_digits)
     subsets = unique_cs_inds
 
     LUT = getpairwiseLUT(length(subsets)) # pair-wise iterators.
@@ -215,11 +262,11 @@ function maximizeME!(
     edge_weights::Vector{T}, # mutates.
     cs::Vector{T},
     edges::Vector{Tuple{Int,Int}};
-    unique_cs_atol = convert(T, 1e-6),
-    unique_J_avg_atol = convert(T, 1e-6),
+    unique_cs_digits::Int = 6,
+    unique_J_avg_digits::Int = 6,
     ) where T
 
-    unique_cs, unique_cs_inds = uniqueinds(cs; atol = unique_cs_atol)
+    unique_cs, unique_cs_inds = uniqueinds(cs; digits = unique_cs_digits)
     subsets = unique_cs_inds
 
     LUT = getpairwiseLUT(length(subsets)) # pair-wise iterators.
@@ -237,7 +284,7 @@ function maximizeME!(
         )
     
         J_avgs = computemean.(Js)
-        unique_Ja, _ = uniqueinds(J_avgs; atol = unique_J_avg_atol)
+        unique_Ja, _ = uniqueinds(J_avgs; digits = unique_J_avg_digits)
 
         if length(unique_Ja) == 1
             # The average agree. replace J-coupling values by their average, J_new.

@@ -84,7 +84,7 @@ include("../examples/helpers/roundtrip.jl")
 
         for spectrometer_tag in spectrometer_tags
             for T in Ts
-                @show molecule_mapping_file_path, molecule_entries, T, spectrometer_tag
+                @show molecule_entries, T, spectrometer_tag
                 
                 coherence_sum_zero_tol::T = convert(T, 1e-6)
                 roundtrip_zero_tol::T = convert(T, 1e-6)
@@ -103,8 +103,7 @@ include("../examples/helpers/roundtrip.jl")
                     tol_radius_1D = convert(T, 0.1), # strictly between 0 and 1. The lower, the better the approximation, but would a larger partition (i.e. more resonance groups).
                     nuc_factor = convert(T, 1.5),
                 )
-                unique_cs_atol = convert(T, 1e-6)
-                unique_J_avg_atol = convert(T, 1e-6)
+                unique_cs_digits = 6
                 
                 Phys, As, MSPs = HAM.loadandsimulate(
                     T,
@@ -113,8 +112,7 @@ include("../examples/helpers/roundtrip.jl")
                     H_params_path,
                     molecule_mapping_file_path;
                     config = config,
-                    unique_cs_atol = unique_cs_atol,
-                    unique_J_avg_atol = unique_J_avg_atol,
+                    unique_cs_digits = unique_cs_digits,
                 )
 
                 # tests
@@ -149,7 +147,7 @@ end
 @testset "load coupling, round-trip" begin
     
     T = Float64
-    unique_cs_atol = convert(T, 1e-6)
+    unique_cs_digits = 6
 
     root_data_path = DS.getdatapath(DS.NMR2023()) # coupling values data repository root path
 
@@ -175,7 +173,7 @@ end
             [names[k];],
             H_params_path,
             molecule_mapping_file_path;
-            unique_cs_atol = unique_cs_atol,
+            unique_cs_digits = unique_cs_digits,
         )[begin]
         for k in eachindex(names)
     )
@@ -184,7 +182,7 @@ end
         P = Phys[n]
 
         H_IDs, H_css, J_IDs, J_vals = HAM.extractcouplinginfo(P)
-        P_rec = HAM.getPhysicalParamsType(H_IDs, H_css, J_IDs, J_vals; unique_cs_atol = unique_cs_atol)
+        P_rec = HAM.getPhysicalParamsType(H_IDs, H_css, J_IDs, J_vals; unique_cs_digits = unique_cs_digits)
 
         for s in propertynames(P)
 

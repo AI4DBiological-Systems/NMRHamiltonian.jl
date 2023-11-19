@@ -138,7 +138,7 @@ Phys = NMRHamiltonian.getphysicalparameters(
     molecule_entries,
     H_params_path,
     molecule_mapping_file_path;
-    unique_cs_atol = convert(T, 1e-6),
+    unique_cs_digits = 6,
 )
 # You can tweak the J-coupling or chemical shift values of Phys manually if desired, before calling simulate(). We won't tweak anything in this demo.
 
