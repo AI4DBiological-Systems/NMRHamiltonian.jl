@@ -34,7 +34,7 @@ function simulate(
     fs::T,
     SW::T,
     ν_0ppm::T,
-    config::SHConfig;
+    configs::Vector{SHConfig{T}},
     ) where T <: AbstractFloat
 
     # set up.
@@ -66,7 +66,7 @@ function simulate(
             Phys[n].H_inds_singlets,
             Phys[n].cs_singlets,
             ppm2hzfunc,
-            config;
+            configs[n];
             ME = Phys[n].ME
         )
 
@@ -101,6 +101,22 @@ function simulate(
     end
 
     return As, MSPs
+end
+
+# use the same config for all compounds.
+function simulate(
+    Phys::Vector{PhysicalParamsType{T}},
+    molecule_entries::Vector{String},
+    fs::T,
+    SW::T,
+    ν_0ppm::T,
+    config::SHConfig;
+    ) where T <: AbstractFloat
+
+    return simulate(
+        Phys, molecule_entries, fs, SW, ν_0ppm,
+        collect( config for _ = 1:length(molecule_entries))
+    )
 end
 
 function setupmoleculeSH(
@@ -196,9 +212,10 @@ function loadandsimulate(
     molecule_mapping_file_path;
     config::SHConfig{T} = SHConfig{T}(
         coherence_tol = convert(T, 0.01),
-        relative_α_threshold = convert(T, 0.005),
-        tol_radius_1D = convert(T, 0.1), # strictly between 0 and 1. The lower, the better the approximation, but would a larger partition (i.e. more resonance groups).
-        nuc_factor = convert(T, 1.5),
+    relative_α_threshold = convert(T, 0.005),
+    max_deviation_from_mean = convert(T, 0.2),
+    acceptance_factor = convert(T, 0.99),
+    total_α_threshold = convert(T, 0.01), # final intensity pruning.
     ),
     unique_cs_digits::Int = 6,
     ) where T <: AbstractFloat

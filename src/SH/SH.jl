@@ -52,7 +52,7 @@ function computeSH(
     N_sys = length(css_sys)
     @assert length(J_vals_sys) == length(J_inds_sys) == N_sys
     #
-    normalize_αs, coherence_tol_1D = config.normalize_αs, config.coherence_tol
+    coherence_tol_1D = config.coherence_tol
 
     
     N_singlets = length(cs_singlets)
@@ -92,10 +92,9 @@ function computeSH(
         )
 
         # normalize intensities according to number of spins.
-        if normalize_αs
-            N_spins = length(css_sys[i])
-            normalizetoNspins!(intensities, N_spins)
-        end
+        N_spins = length(css_sys[i])
+        normalizetoNspins!(intensities, N_spins)
+    
 
         Id = getsingleId(T)
         ms = computequantumnumbers(eigenvectors, Id)

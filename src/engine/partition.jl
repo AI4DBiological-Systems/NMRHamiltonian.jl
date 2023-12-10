@@ -4,7 +4,7 @@ function getΔcm(
     ms::Vector{Vector{T}},
     coherence_state_pairs::Vector{Tuple{Int,Int}},
     intensities::Vector{T};
-    intensity_tol::T = zero(T),
+    intensity_tol::T = zero(T), # by default, disable pruncing based on intensity.
     ) where T
     
     c_states_prune = coherence_state_pairs
@@ -41,13 +41,14 @@ function partitionresonances(
     ME::Vector{Vector{Vector{Int}}} = Vector{Vector{Vector{Int}}}(undef, 0),
     ) where {T <: AbstractFloat}
 
-    relative_α_threshold, tol_radius_1D, nuc_factor = config.relative_α_threshold, config.tol_radius_1D, config.nuc_factor
-
+    relative_α_threshold, total_α_threshold = config.relative_α_threshold, config.total_α_threshold
+    max_dev, acceptance_factor = config.max_deviation_from_mean, config.acceptance_factor
+    
     N_systems = length(spin_systems)
     @assert N_systems == length(N_spins_sys)
 
     part_inds_set = Vector{Vector{Vector{Int}}}(undef, N_systems)
-    Δc_m_set = Vector{Vector{Vector{T}}}(undef, N_systems)
+    Δc_set = Vector{Vector{Vector{T}}}(undef, N_systems)
 
     as = Vector{Vector{T}}(undef, N_systems)
     Fs = Vector{Vector{T}}(undef, N_systems)
@@ -60,18 +61,27 @@ function partitionresonances(
         # ## prune resonance components that have a low intensity.
         sp = spin_systems[i]
 
-        ## prune resonance components that have a low intensity.
-        Δc_m, inds_amp, c_states_prune = getΔcm(
-            sp;
-            intensity_tol = relative_α_threshold*maximum(sp.intensities),
-        )
+        # debug.
+        αs = copy(sp.intensities)
+        Ωs = copy(sp.frequencies)
+        ms = sp.partial_quantum_numbers
+        c_states_prune = sp.coherence_state_pairs
+        c_m_r = collect( ms[r] for (r,s) in c_states_prune )
+        c_m_s = collect( ms[s] for (r,s) in c_states_prune )
+        Δc_m = collect( c_m_r[j] - c_m_s[j] for j in eachindex(c_m_r))
+    
+        # ## prune resonance components that have a low intensity.
+        # Δc_m, inds_amp, c_states_prune = getΔcm(
+        #     sp;
+        #     intensity_tol = relative_α_threshold*maximum(sp.intensities),
+        # )
 
-        αs_i_prune = copy(sp.intensities)
-        Ωs_i_prune = copy(sp.frequencies)
-        if !isempty(inds_amp)
-            αs_i_prune = sp.intensities[inds_amp]
-            Ωs_i_prune = sp.frequencies[inds_amp]
-        end
+        # αs_i_prune = copy(sp.intensities)
+        # Ωs_i_prune = copy(sp.frequencies)
+        # if !isempty(inds_amp)
+        #     αs_i_prune = sp.intensities[inds_amp]
+        #     Ωs_i_prune = sp.frequencies[inds_amp]
+        # end
 
         ## reduce the cardinality of Δc_m if there is magnetic equivalence in this spin system.
         if !isempty(ME)
@@ -80,44 +90,122 @@ function partitionresonances(
             end
         end
 
-        # rescale  before clustering.
-        Δc_m_rescaled = scalebydim(Δc_m)
+        # remove components.
+        #@show length(αs), αs
+        αs, Ωs, Δc = processcomponents(αs, Ωs, Δc_m, relative_α_threshold)
+        #@show length(αs), αs
 
-        part_inds = getpartition(
-            Δc_m_rescaled;
-            nuc_factor = nuc_factor,
-            tol_radius_1D = tol_radius_1D,
+        # @show Δc_m
+        # @show Δc
+        # println()
+
+        # rescale  before clustering.
+        #Δc_m_rescaled = scalebydim(Δc_m)
+
+        P = getpartition(Δc, max_dev, acceptance_factor)
+
+        #Δc_centroids = assemblecentroids(MaxAmplitudeCentroids(), part_inds, Δc_m, αs_i_prune)
+        P2, as[i], Fs[i], Δc_set[i], Δc_bar[i] = postprocesscomponents(
+            P, αs, Ωs, Δc;
+            total_α_threshold = total_α_threshold,
         )
 
-        # won't yield Δc_bar such that they approximately sum to -1.
-        #Δc_centroids = assemblecentroids(WeightedCentroids(), part_inds, Δc_m, αs_i_prune)
+        # debug.
+        P2_flat = collect( Iterators.flatten(P2))
+        #@show length(P2_flat), length(as[i]), length(Δc_bar[i]), length(Fs[i])
+        @assert norm(unique(sort(P2_flat)) - collect(1:length(as[i]))) < eps(T)*10        
+        #end debug/
+
+        keep_inds = collect( Iterators.flatten(P2))
+        c_states[i] = c_states_prune[keep_inds]
         
-        #Δc_centroids = assemblecentroids(AveragedCentroids(), part_inds, Δc_m, αs_i_prune)
-        
-        # safest option.
-        Δc_centroids = assemblecentroids(MaxAmplitudeCentroids(), part_inds, Δc_m, αs_i_prune)
-
-        as[i] = αs_i_prune
-        Fs[i] = Ωs_i_prune
-
-        part_inds_set[i] = part_inds
-        Δc_m_set[i] = Δc_m
-
-        Δc_bar[i] = Δc_centroids
-        c_states[i] = c_states_prune
+        part_inds_set[i] = P2
     end
 
-    return as, Fs, part_inds_set, Δc_m_set, Δc_bar, c_states
+    return as, Fs, part_inds_set, Δc_set, Δc_bar, c_states
 end
 
-# rescale before partitioning, since sum(Δc_m[l]) is approximately -1, as length(Δc_m[l]) (number of chemical shifts) increases, the values in Δc_m[l] tend to take on smaller values.  This affects the partitioning algorithm's required stopping duality gap tolderance. Instead of changing the tolerance, do this rescaling procedure.
-function scalebydim(Δc_m::Vector{Vector{T}})::Vector{Vector{T}} where T
-    out = similar(Δc_m)
-    for i in eachindex(Δc_m)
-        out[i] = Δc_m[i] .* length(Δc_m[i]) 
+# check for neligible intensities, duplicates in coherence order differences, and prune enough components to get approximately the target intensity_err.
+function processcomponents(
+    αs0::Vector{T},
+    Ωs0::Vector{T},
+    Δc_m0::Vector{Vector{T}},
+    relative_α_threshold::T;
+    zero_tol = eps(T)*100,
+    ) where T <: AbstractFloat
+
+    total_intensity = sum(αs0)
+
+    # # remove components with negligible intensity.
+    inds = findall(xx->xx>zero_tol, αs0)
+    αs = αs0[inds]
+    Ωs = Ωs0[inds]
+    Δc_m = Δc_m0[inds]
+    
+    # # detect duplicates, including frequency.
+    level_trait = SL.UseSLDistance(zero_tol)
+    center_trait = SL.UseScore(SL.UseMaximum(), αs)
+
+    # augment with frequency.
+    X = collect([Δc_m[n]; Ωs[n]] for n in eachindex(Ωs))
+
+    Xc, _, partition = SL.reducepts(
+        level_trait,
+        center_trait,
+        SL.geteuclideanmetric(),
+        X,
+    )
+
+    # intensity: sum up the duplicates.
+    xs0 = collect(
+        sum( αs[i] for i in partition[k] )
+        for k in eachindex(partition)
+    )
+
+    # frequency: take the mean among the duplicates.
+    Fs0 = collect(
+        Statistics.mean(Ωs[i] for i in partition[k] )
+        for k in eachindex(partition)
+    )
+
+    # coherence order differenes: remove the last dimension, which was Ωs[n].
+    Δc0 = collect(Xc[n][begin:end-1] for n in eachindex(Xc)) # the last dim of Xc is Ωs.
+
+    if relative_α_threshold == zero(T)
+        # no further discarding of components required.
+        return xs0, Fs0, Δc0
     end
 
-    return out
+    # # prune enough low intensity components such that xs_intensity = sum(xs) is approximately relative_α_threshold*total_intensity.
+    # use a binary search for this.
+
+    f = pp->prunecomponents(pp, xs0, total_intensity)[1]
+
+    intensity_tol, iters_ran = SL.binarysearch(
+        f,
+        relative_α_threshold,
+        zero(T),
+        relative_α_threshold*total_intensity;
+        atol = relative_α_threshold/10,
+        max_iters = 100,
+    )
+    
+    # get the processed components.
+    rel_err, inds = prunecomponents(intensity_tol, xs0, total_intensity)
+    xs = xs0[inds]
+    Fs = Fs0[inds]
+    Δc = Δc0[inds]
+    #@show rel_err, iters_ran
+
+    return xs, Fs, Δc
+end
+
+# for use with Sl.binarysearch().
+function prunecomponents(intensity_tol, xs0, nominal_val)
+    inds = findall(xx->xx>intensity_tol, xs0)
+    
+    candidate_val = sum(xs0[i] for i in inds)
+    return abs(candidate_val-nominal_val)/nominal_val, inds
 end
 
 # given a length r, find the radius of the D-dimensional ball with radius h, such that:
@@ -133,98 +221,84 @@ end
 
 # use SL.
 function getpartition(
-    Δc_m_rescaled::Vector{Vector{T}};
-    nuc_factor::T = convert(T, 1.5),
-    tol_radius_1D::T = convert(T, 0.1), # strictly between 0 and 1. The lower, the better the approximation, but would a larger partition (i.e. more resonance groups).
+    X::Vector{Vector{T}},
+    max_dev::T,
+    acceptance_factor::T,
     ) where T <: AbstractFloat
 
-    X = Δc_m_rescaled
+    metric = SL.geteuclideanmetric()
+    level_config = SL.UseMaxDeviation(max_dev)
 
-    N = length(X)
-    D = length(X[begin])
-    N_nuc = D
-
-    metricfunc = (xx,yy)->norm(xx-yy)
-    distance_set, partition_set = SL.runsinglelinkage(
-        X,
-        metricfunc;
-        early_stop_distance = convert(T, Inf),
+    P, _ = SL.iteratedsl(
+        level_config,
+        metric,
+        X;
+        acceptance_factor = acceptance_factor,
+        max_iter = 100,
     )
-    default_size = floor(Int, N_nuc *nuc_factor)
 
-    h = getradius(tol_radius_1D, D)
-    ind = findfirst(xx->xx>h, distance_set)
-    if isnothing(ind)
-        ind = max(1, length(X) - default_size)
-    else
-        ind -= 1
+    return P
+end
+
+# further reduce components.
+function postprocesscomponents(
+    P::Vector{Vector{Int}},
+    xs::Vector{T}, # intensity
+    Fs::Vector{T}, # frequency
+    X::Vector{Vector{T}}; # Δc
+    total_α_threshold::T = zero(T)
+    ) where T <: AbstractFloat
+
+    @assert zero(T) <= total_α_threshold < one(T)
+
+    # for the frequency and Δc, we chose the component with the largest intensity.
+    inds_bar = SL.getcenters(
+        SL.UseScore(SL.UseMaximum(), xs),
+        collect(1:length(X)),
+        P,
+    )
+    #Fs_bar = Fs[inds_bar]
+    X_bar = X[inds_bar]
+
+    # for the intensity, we use the total intensity of the part.
+    xs_bar = collect(
+        sum( xs[i] for i in P[k] )
+        for k in eachindex(P)
+    )
+
+    if total_α_threshold == zero(T)
+        return P, xs, Fs, X, X_bar
     end
 
-    h_size = length(X) - ind
-    if h_size < default_size
-        #
-        h_size = default_size
-    end
+    inds = sortperm(xs_bar)
+    s = xs_bar[inds]
+    Z = sum(xs)
+    st_ind = findfirst(xx->xx>(Z*total_α_threshold), cumsum(s))
+    @assert !isnothing(st_ind)
+    st_ind = max(1, st_ind-1) # make sure we stay within the 0.01.
 
-    ind = max(1, length(X) - default_size)
+    P2 = P[inds][st_ind:end]
+    keep_inds = collect( Iterators.flatten(P2))
 
-    ind2 = findfirst(xx->xx>h, cumsum(distance_set))
-    if !isnothing(ind2)
-        if ind2 > 1
-            ind2 -= 1
-        else
-            ind2 = nothing
+    xs2 = xs[keep_inds]
+    Fs2 = Fs[keep_inds]
+    X2 = X[keep_inds]
+
+    # remap P2 with respect to the indices of x2, Fs2, X2.
+    j = 0
+    for k in eachindex(P2)
+        for i in eachindex(P2[k])
+            j += 1
+            P2[k][i] = j
         end
     end
-    
-    if !isnothing(ind2)
-        if ind2 > ind
-            # ind2 points to a smaller partition than ind, and is safe to use, since cumsum < h.
-            ind = ind2
-        end
-    end
 
-    part_inds = partition_set[ind]
+    X2_bar = SL.getcenters(
+        SL.UseScore(SL.UseMaximum(), xs2),
+        X2,
+        P2,
+    )
 
-    return part_inds
+    return P2, xs2, Fs2, X2, X2_bar
 end
 
-# use the Δc that has the largest amplitude.
-function assemblecentroids(
-    ::MaxAmplitudeCentroids,
-    G::Vector{Vector{Int}},
-    Δc_m::Vector{Vector{T}},
-    αs::Vector{T},
-    )::Vector{Vector{T},
-    } where T <: AbstractFloat
-    
-    centroids = Vector{Vector{T}}(undef, length(G))
-    for k in eachindex(G)
-        inds = G[k]
-        val, j = findmax(αs[inds])
-
-        centroids[k] = Δc_m[inds][j]
-        
-        #@assert isapprox(sum(centroids[k]), -1; atol = 0.1)
-    end
-    
-    return centroids
-end
-
-
-# simple average to get centroid.
-function assemblecentroids(
-    ::AveragedCentroids,
-    G::Vector{Vector{Int}},
-    Δc_m::Vector{Vector{T}},
-    args...
-    )::Vector{Vector{T}} where T <: AbstractFloat
-    
-    centroids = Vector{Vector{T}}(undef, length(G))
-    for k in eachindex(G)
-        inds = G[k]
-        centroids[k] = sum(Δc_m[inds]) ./ length(inds)
-    end
-    
-    return centroids
-end

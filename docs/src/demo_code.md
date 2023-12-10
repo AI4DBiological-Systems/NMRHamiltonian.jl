@@ -80,52 +80,35 @@ fig_num = 1
 T = Float32
 ```
 
-The variable `molecule_entries` contain compound aliases. For this demo, any alias in the `molecule_name_mapping/select_molecules.json` file from [10.5281/zenodo.8174261](https://zenodo.org/record/8174261) would work.
+The variable `molecule_entries` contain compound aliases. We curated values from studies in literature, and placed them at [10.5281/zenodo.8174261](https://zenodo.org/record/8174261). We do not guarantee their correctness. For this demo, we use the files and subfolders in `/examples/files` in NMRHamiltonian's repository. The files there are in JSON format, and you should be able to follow the format there to create any compound with spin systems (see the files under `/coupling_info` and assign aliases (See demo_compounds.json).
+
 ```julia
 ### user inputs.
 
 molecule_entries = [
-    "L-Serine";
-    "alpha-D-Glucose";
-    "beta-D-Glucose";
-    "Ethanol";
-    "L-Methionine";     
-    "L-Phenylalanine";
-    "L-Glutathione reduced";
-    "L-Glutathione oxidized";       
-    "Uridine";
-    "L-Glutamine";
+    "L-Isoleucine";
+    "L-Leucine";
     "L-Valine";
     "DSS";
+    "Singlet - 4.9 ppm";
 ]
 
 # machine values taken from the BMRB 700 MHz 20 mM glucose experiment.
 fs, SW, ν_0ppm = HAM.getpresetspectrometer(T, "700")
 
 ## pull the sample coupling values into dictionary structures.
-# use DataDeps.jl and Tar.jl to download and extract the sample coupling values.
-root_data_path = getdatapath() # coupling values data repository root path
-
-H_params_path = joinpath(root_data_path, "coupling_info") # folder of coupling values. # replace with your own values in actual usage.
-
-
-molecule_mapping_root_path = joinpath(
-    root_data_path,
-    "molecule_name_mapping",
-)
-molecule_mapping_file_path = joinpath(
-    molecule_mapping_root_path,
-    "select_molecules.json",
-)
-#molecule_mapping_file_path = joinpath(molecule_mapping_root_path, "GISSMO_names.json")
+# we should how to use individual files in this example.
+molecule_mapping_file_path = "./files/molecule_name_mapping/demo_compounds.json"
+H_params_path = "./files/coupling_info/"
 
 
 # Type ?help HAM.SHConfig for details.
-config_SH = HAM.SHConfig{T}(
+config = HAM.SHConfig{T}(
     coherence_tol = convert(T, 0.01),
     relative_α_threshold = convert(T, 0.005),
-    tol_radius_1D = convert(T, 0.1), # strictly between 0 and 1. The lower, the better the approximation, but would a larger partition (i.e. more resonance groups).
-    nuc_factor = convert(T, 1.5),
+    max_deviation_from_mean = convert(T, 0.2),
+    acceptance_factor = convert(T, 0.99),
+    total_α_threshold = convert(T, 0.01), # final intensity pruning.
 )
 
 ```

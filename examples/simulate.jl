@@ -7,9 +7,8 @@ fig_num = 1
 
 #PLT.matplotlib["rcParams"][:update](["font.size" => 22, "font.family" => "serif"])
 
-#T = Float64
-T = Float32
-#T = Float16 # will result in numerical precision-related errors. Please use Float32 or above.
+T = Float64
+#T = Float32
 
 ### user inputs.
 
@@ -33,14 +32,17 @@ fs, SW, ν_0ppm = HAM.getpresetspectrometer(T, "700")
 
 config = HAM.SHConfig{T}(
     coherence_tol = convert(T, 0.01),
-    relative_α_threshold = convert(T, 0.005),
-    tol_radius_1D = convert(T, 0.1), # strictly between 0 and 1. The lower, the better the approximation, but would a larger partition (i.e. more resonance groups).
-    nuc_factor = convert(T, 1.5),
+    relative_α_threshold = convert(T, 0.001),
+    #relative_α_threshold = eps(T)*100,
+    max_deviation_from_mean = convert(T, 0.05),
+    acceptance_factor = convert(T, 0.99),
+    #total_α_threshold = convert(T, 0.01), #zero(T), # final intensity pruning.
+    total_α_threshold = zero(T),
 )
 
 # ## Identify where to get the reference J-coupling and chemical shift files.
 
-# ### If we're using the J-coupling files from literature, as assembled by PublicationDatasets.jl.
+# # Use J-coupling and reference chemical shift values from a database.
 root_data_path = DS.getdatapath(DS.NMR2023()) # coupling values data repository root path
 H_params_path = joinpath(root_data_path, "coupling_info") # folder of coupling values. # replace with your own values in actual usage.
 molecule_mapping_root_path = joinpath(
@@ -51,10 +53,6 @@ molecule_mapping_file_path = joinpath(
     molecule_mapping_root_path,
     "select_molecules.json",
 )
-
-# ### if we want to use the adjusted coupling infomation. # see adjust_phys.jl for how we generated these files.
-molecule_mapping_file_path = "./files/adjusted_molecules.json"
-H_params_path = "./files/"
 
 ### end inputs.
 
@@ -87,6 +85,7 @@ println()
 
 del_c_bars = collect( As[n].Δc_bar for n in eachindex(As) )
 N_res_groups = collect( length.(As[n].Δc_bar) for n in eachindex(As) )
+N_components = collect( length.(As[n].αs) for n in eachindex(As) )
 N_nucs = collect( 
     collect(
         length(As[n].Δc[i][begin])
@@ -94,8 +93,8 @@ N_nucs = collect(
     ) 
     for n in eachindex(As)
 )
-println("[molecule_entries N_nucs N_res_groups]:")
-display([molecule_entries N_nucs N_res_groups])
+println("[molecule_entries N_nucs N_res_groups N_components]:")
+display([molecule_entries N_nucs N_res_groups N_components])
 println()
 
 # typically, the number of nuclei in a spin system should less than or equal to the number of resonance groups for that spin system.

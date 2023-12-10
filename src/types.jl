@@ -5,10 +5,11 @@
 ```
 @kwdef struct SHConfig{T <: Real}
     coherence_tol::T = convert(T, 0.01)
-    relative_α_threshold::T = convert(T, 0.005)
-    tol_radius_1D::T = convert(T, 0.1) # 
-    nuc_factor::T = convert(T, 1.5)
-    normalize_αs::Bool = true
+    relative_α_threshold::T = convert(T, 0.005) # initial intensity pruning.
+    tol_radius_1D::T = convert(T, 0.1) # strictly between 0 and 1. The lower, the better the approximation, but would a larger partition (i.e. more resonance groups).
+    max_deviation_from_mean::T = convert(T, 0.2)
+    acceptance_factor::T = convert(T, 0.99)
+    total_α_threshold::T = convert(T, 0.01) # final intensity pruning.
 end
 ```
 
@@ -26,25 +27,25 @@ This controls the number of Δc features we get, by how far their sum deviate fr
 ### `relative_α_threshold::T`
 This controls the number of Δc feature we get, by how intense their corresponding resonance intensity is relative to the maximum intensity within their local spin system.
 
-### `normalize_αs::Bool`
-Whether or not to normalize the resonance intensities according to the number of nuclei in the spin system. It is recommended to leave this to `true` during normal operation.
+### `max_deviation_from_mean::T`
+This non-negative controls the number of resonance groups we get. The smaller, the more resonance groups, but better approximation to the preliminary model.
 
-### `tol_radius_1D::T`
-An approximate tolerance for merging similar coherence difference features together, when generating resonance groups.
-Should be strictly between 0 and 1. The lower the number, the more resonance groups are generated.
+### `acceptance_factor::T`
+This non-negative controls the number of resonance groups we get. Takes on value strictly between 0 to 1. Tends to create less resonance groups when it is close to 1, but takes longer to compute.
 
-### `nuc_factor::T`
-A guard to prevent too few resoannce groups, unless the coherence difference features, the set of Δc's, are very similar.
-This should be strictly above 1. The higher this number, the more resonance groups are generated. 
+### `total_α_threshold::T`
+This non-negative controls the number of resonance groups we get. This dictates the cumulative intensity threshold for resonance groups, as a proportionality factor of the total intensity of the spin system. The least intense groups that cumulatively add to less than this value is discarded, and αs and Ωs and Δc are updated according to the kept components. Takes on value from [0, 1). When set to zero, does not prune any resonance groups of low intensity during the post-processing step.
+
 
 """
 @kwdef struct SHConfig{T <: Real}
 
     coherence_tol::T = convert(T, 0.01)
-    relative_α_threshold::T = convert(T, 0.005)
+    relative_α_threshold::T = convert(T, 0.005) # initial intensity pruning.
     tol_radius_1D::T = convert(T, 0.1) # strictly between 0 and 1. The lower, the better the approximation, but would a larger partition (i.e. more resonance groups).
-    nuc_factor::T = convert(T, 1.5)
-    normalize_αs::Bool = true
+    max_deviation_from_mean::T = convert(T, 0.2)
+    acceptance_factor::T = convert(T, 0.99)
+    total_α_threshold::T = convert(T, 0.01) # final intensity pruning.
 end
 
 # multiple spin systems. Partition

@@ -3,7 +3,7 @@
 import PublicationDatasets as DS
 
 using LinearAlgebra
-
+using Serialization
 using Test
 
 import JSON3

@@ -7,6 +7,9 @@ import JSON3
 import SingleLinkagePartitions
 const SL = SingleLinkagePartitions
 
+using Serialization
+using Statistics
+
 # constant values.
 function twopi(::Type{Float32})::Float32
     return 6.2831855f0 #convert(T, 2*π)
