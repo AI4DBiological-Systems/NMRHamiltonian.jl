@@ -70,50 +70,32 @@ fig_num = 1
 
 # select the AbstractFloat data type you want to use. Anything lower than Float32 will result in numerical precision-related errors in our tests.
 #T = Float64
-T = Float32</code></pre><p>The variable <code>molecule_entries</code> contain compound aliases. For this demo, any alias in the <code>molecule_name_mapping/select_molecules.json</code> file from <a href="https://zenodo.org/record/8174261">10.5281/zenodo.8174261</a> would work.</p><pre><code class="language-julia hljs">### user inputs.
+T = Float32</code></pre><p>The variable <code>molecule_entries</code> contain compound aliases. We curated values from studies in literature, and placed them at <a href="https://zenodo.org/record/8174261">10.5281/zenodo.8174261</a>. We do not guarantee their correctness. For this demo, we use the files and subfolders in <code>/examples/files</code> in NMRHamiltonian&#39;s repository. The files there are in JSON format, and you should be able to follow the format there to create any compound with spin systems (see the files under <code>/coupling_info</code> and assign aliases (See demo_compounds.json).</p><pre><code class="language-julia hljs">### user inputs.
 
 molecule_entries = [
-    &quot;L-Serine&quot;;
-    &quot;alpha-D-Glucose&quot;;
-    &quot;beta-D-Glucose&quot;;
-    &quot;Ethanol&quot;;
-    &quot;L-Methionine&quot;;     
-    &quot;L-Phenylalanine&quot;;
-    &quot;L-Glutathione reduced&quot;;
-    &quot;L-Glutathione oxidized&quot;;       
-    &quot;Uridine&quot;;
-    &quot;L-Glutamine&quot;;
+    &quot;L-Isoleucine&quot;;
+    &quot;L-Leucine&quot;;
     &quot;L-Valine&quot;;
     &quot;DSS&quot;;
+    &quot;Singlet - 4.9 ppm&quot;;
 ]
 
 # machine values taken from the BMRB 700 MHz 20 mM glucose experiment.
 fs, SW, ν_0ppm = HAM.getpresetspectrometer(T, &quot;700&quot;)
 
 ## pull the sample coupling values into dictionary structures.
-# use DataDeps.jl and Tar.jl to download and extract the sample coupling values.
-root_data_path = getdatapath() # coupling values data repository root path
-
-H_params_path = joinpath(root_data_path, &quot;coupling_info&quot;) # folder of coupling values. # replace with your own values in actual usage.
-
-
-molecule_mapping_root_path = joinpath(
-    root_data_path,
-    &quot;molecule_name_mapping&quot;,
-)
-molecule_mapping_file_path = joinpath(
-    molecule_mapping_root_path,
-    &quot;select_molecules.json&quot;,
-)
-#molecule_mapping_file_path = joinpath(molecule_mapping_root_path, &quot;GISSMO_names.json&quot;)
+# we should how to use individual files in this example.
+molecule_mapping_file_path = &quot;./files/molecule_name_mapping/demo_compounds.json&quot;
+H_params_path = &quot;./files/coupling_info/&quot;
 
 
 # Type ?help HAM.SHConfig for details.
-config_SH = HAM.SHConfig{T}(
+config = HAM.SHConfig{T}(
     coherence_tol = convert(T, 0.01),
     relative_α_threshold = convert(T, 0.005),
-    tol_radius_1D = convert(T, 0.1), # strictly between 0 and 1. The lower, the better the approximation, but would a larger partition (i.e. more resonance groups).
-    nuc_factor = convert(T, 1.5),
+    max_deviation_from_mean = convert(T, 0.2),
+    acceptance_factor = convert(T, 0.99),
+    total_α_threshold = convert(T, 0.01), # final intensity pruning.
 )
 </code></pre><p>Now, load the parameters, simulate the resonance components, and partition into resonance groups.</p><pre><code class="language-julia hljs"># read the physical parameters from file, from via the DataDeps routine from &quot;helpers/data.jl&quot;.
 Phys = NMRHamiltonian.getphysicalparameters(
@@ -193,4 +175,4 @@ PLT.plot(P, real.(q_U))
 
 PLT.gca().invert_xaxis()
 PLT.ylabel(&quot;real part&quot;)
-PLT.title(&quot;spectrum of $(molecule_entries[molecule_select]), spin system $(spin_system_select)&quot;)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../api/">« Public API</a><a class="docs-footer-nextpage" href="../return_vars/">Demo: return variables »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.1.2 on <span class="colophon-date" title="Sunday 19 November 2023 16:45">Sunday 19 November 2023</span>. Using Julia version 1.9.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+PLT.title(&quot;spectrum of $(molecule_entries[molecule_select]), spin system $(spin_system_select)&quot;)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../api/">« Public API</a><a class="docs-footer-nextpage" href="../return_vars/">Demo: return variables »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.2.1 on <span class="colophon-date" title="Sunday 10 December 2023 04:52">Sunday 10 December 2023</span>. Using Julia version 1.9.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
