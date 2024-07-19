@@ -268,3 +268,15 @@ function loadandsimulate(
 
     return Phys, As, MSPs
 end
+
+# Utilities
+function get_num_groups(As::Vector{NMRHamiltonian.SHType{T}}) where T <: AbstractFloat
+    
+    N_groups = 0
+    for A in As
+        for Δc_bar in A.Δc_bar
+            N_groups += length(Δc_bar)
+        end
+    end
+    return N_groups
+end

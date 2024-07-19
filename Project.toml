@@ -1,14 +1,13 @@
 name = "NMRHamiltonian"
 uuid = "d73005cc-2eb2-45b3-9785-29d07aec07ac"
 authors = ["Roy Chih Chung Wang"]
-version = "0.7.0"
+version = "0.7.1"
 
 [deps]
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 Kronecker = "2c470bb0-bcc8-11e8-3dad-c9649493f05e"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 SingleLinkagePartitions = "f8439c9b-f421-4171-88a6-2fea72ebf919"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 

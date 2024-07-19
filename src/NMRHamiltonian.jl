@@ -4,23 +4,22 @@ using LinearAlgebra
 import Kronecker, Graphs
 import JSON3
 
-import SingleLinkagePartitions
-const SL = SingleLinkagePartitions
+import SingleLinkagePartitions as SL
 
-using Serialization
+#using Serialization
 using Statistics
 
 # constant values.
-function twopi(::Type{Float32})::Float32
+function twopi(::Type{Float32})
     return 6.2831855f0 #convert(T, 2*π)
 end
 
-function twopi(::Type{Float64})::Float64
+function twopi(::Type{Float64})
     return 6.283185307179586 #convert(T, 2*π)
 end
 
-function twopi(::Type{T})::T where T <: AbstractFloat
-    return convert(T, 2*π)
+function twopi(::Type{T}) where T <: AbstractFloat
+    return T(2*π)
 end
 
 
@@ -75,6 +74,7 @@ SHType,
 
 readbasechemshifts,
 writebasechemshifts!,
-extractMEnuclei
+extractMEnuclei,
+get_num_groups
 
 end
