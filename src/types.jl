@@ -68,6 +68,7 @@ struct SHType{T}
     Δc::Vector{Vector{Vector{T}}}
     parts::Vector{Vector{Vector{Int}}}
     Δc_bar::Vector{Vector{Vector{T}}}
+    cs_Δc::Vector{Vector{T}}
 
     # the number of spins for each spin system.
     N_spins_sys::Vector{Int}
@@ -92,6 +93,7 @@ Fields
 - `Δc`$(DOCSTRING_SHType_Δc("T"))
 - `parts`$(DOCSTRING_SHType_parts())
 - `Δc_bar`$(DOCSTRING_SHType_Δc_bar("T"))
+- `cs_Δc`: the reference chemical shift values, one for each dimension of a Δc vector.
 - `N_spins_sys`$(DOCSTRING_SHType_N_spins_sys())
 - `αs_singlets`$(DOCSTRING_SHType_αs_singlets("T"))
 - `Ωs_singlets`$(DOCSTRING_SHType_Ωs_singlets("T"))
@@ -108,7 +110,8 @@ struct SHType{T} # output of the SH simulation.
     Δc::Vector{Vector{Vector{T}}} # every resonance frequency forms its own singleton part, i.e. the set to be partitioned.
     parts::Vector{Vector{Vector{Int}}}
     Δc_bar::Vector{Vector{Vector{T}}} # multiple resonance frequencies form a part.
-
+    cs_Δc::Vector{Vector{T}}
+    
     N_spins_sys::Vector{Int}
 
     # resonance components in singlets spin systems.

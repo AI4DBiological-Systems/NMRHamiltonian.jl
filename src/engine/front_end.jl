@@ -57,18 +57,9 @@ function simulate(
     # simulate.
     for n in eachindex(Phys)
 
-        αs, Ωs, parts, Δc, Δc_bar, N_spins_sys,
+        αs, Ωs, parts, Δc, Δc_bar, N_spins_sys, cs_Δc,
         αs_singlets, Ωs_singlets, N_spins_singlet, 
-        MSPs[n] = setupmoleculeSH( 
-            Phys[n].J_inds_sys_local,
-            Phys[n].J_vals_sys,
-            Phys[n].cs_sys,
-            Phys[n].H_inds_singlets,
-            Phys[n].cs_singlets,
-            ppm2hzfunc,
-            configs[n];
-            ME = Phys[n].ME
-        )
+        MSPs[n] = setupmoleculeSH(Phys[n], ppm2hzfunc, configs[n])
 
         # update with singlets.
         setupsingletspinsystem!(
@@ -92,6 +83,7 @@ function simulate(
             Δc,
             parts,
             Δc_bar,
+            cs_Δc,
             N_spins_sys,
             #αs_singlets, Ωs_singlets,
             fs, SW, ν_0ppm
@@ -120,18 +112,15 @@ function simulate(
 end
 
 function setupmoleculeSH(
-    J_inds_sys_local::Vector{Vector{Tuple{Int64, Int64}}},
-    J_vals_sys::Vector{Vector{T}},
-    cs_sys::Vector{Vector{T}},
-    H_inds_singlets::Vector{Vector{Int64}},
-    cs_singlets::Vector{T},
+    phy::PhysicalParamsType{T},
     ppm2hzfunc,
-    config::SHConfig;
-    ME::Vector{Vector{Vector{Int}}} = Vector{Vector{Vector{Int}}}(undef, 0)
+    config::SHConfig,
     ) where T <: AbstractFloat
 
+    cs_sys = phy.cs_sys
+
     ### spin Hamiltonian simulation.
-    N_spins_singlet = length.(H_inds_singlets)
+    N_spins_singlet = length.(phy.H_inds_singlets)
 
     N_spins_sys = collect( length(cs_sys[m]) for m in eachindex(cs_sys) )
     intermediates_sys = prepcouplingalgorithm(T, N_spins_sys)
@@ -140,24 +129,25 @@ function setupmoleculeSH(
     # coherence_state_pairs_sys, H_sys, states_sys, ms_sys, M_sys = computeSH(
     MSP = computeSH( # MSP stands for molecule spin system.
         cs_sys,
-        J_vals_sys,
-        J_inds_sys_local,
+        phy.J_vals_sys,
+        phy.J_inds_sys_local,
         intermediates_sys,
         ppm2hzfunc,
-        cs_singlets,
+        phy.cs_singlets,
         N_spins_singlet,
         config,
     )
     
     αs, Ωs, parts,
-    Δc, Δc_bar, c_states = partitionresonances(
+    Δc, Δc_bar, cs_Δc, c_states = partitionresonances(
         MSP.spin_systems,
         N_spins_sys,
-        config;
-        ME = ME,
+        config,
+        phy.ME,
+        cs_sys,
     )
     
-    return αs, Ωs, parts, Δc, Δc_bar, N_spins_sys,
+    return αs, Ωs, parts, Δc, Δc_bar, N_spins_sys, cs_Δc,
     MSP.singlet_intensities, MSP.singlet_frequencies, N_spins_singlet, MSP
 end
 
@@ -202,36 +192,6 @@ function getpresetspectrometer(::Type{T}, tag) where T <: AbstractFloat
     end
 
     return convert(T, fs), convert(T, SW), convert(T, ν_0ppm)
-end
-
-function loadandsimulate(
-    ::Type{T},
-    machine_settings_tag::String,
-    molecule_entries::Vector{String},
-    H_params_path,
-    molecule_mapping_file_path;
-    config::SHConfig{T} = SHConfig{T}(
-        coherence_tol = convert(T, 0.01),
-    relative_α_threshold = convert(T, 0.005),
-    max_deviation_from_mean = convert(T, 0.2),
-    acceptance_factor = convert(T, 0.99),
-    total_α_threshold = convert(T, 0.01), # final intensity pruning.
-    ),
-    unique_cs_digits::Int = 6,
-    ) where T <: AbstractFloat
-
-    fs, SW, ν_0ppm = getpresetspectrometer(T, machine_settings_tag)
-
-    return loadandsimulate(
-        fs,
-        SW,
-        ν_0ppm,
-        molecule_entries::Vector{String},
-        H_params_path,
-        molecule_mapping_file_path,
-        config;
-        unique_cs_digits = unique_cs_digits,
-    )
 end
 
 function loadandsimulate(

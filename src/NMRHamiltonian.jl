@@ -54,7 +54,7 @@ include("./engine/reduce_nuclei.jl")
 include("./engine/partition.jl")
 include("./engine/front_end.jl") # front end for scripts in the SH folder.
 
-
+include("convinence.jl")
 
 export 
 getphysicalparameters,

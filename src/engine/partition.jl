@@ -37,8 +37,9 @@ end
 function partitionresonances(
     spin_systems::Vector{SpinSystem{T}},
     N_spins_sys::Vector{Int},
-    config::SHConfig;
-    ME::Vector{Vector{Vector{Int}}} = Vector{Vector{Vector{Int}}}(undef, 0),
+    config::SHConfig,
+    ME::Vector{Vector{Vector{Int}}},
+    cs_sys,
     ) where {T <: AbstractFloat}
 
     relative_α_threshold, total_α_threshold = config.relative_α_threshold, config.total_α_threshold
@@ -49,6 +50,7 @@ function partitionresonances(
 
     part_inds_set = Vector{Vector{Vector{Int}}}(undef, N_systems)
     Δc_set = Vector{Vector{Vector{T}}}(undef, N_systems)
+    cs_Δc = Vector{Vector{T}}(undef, N_systems)
 
     as = Vector{Vector{T}}(undef, N_systems)
     Fs = Vector{Vector{T}}(undef, N_systems)
@@ -69,24 +71,17 @@ function partitionresonances(
         c_m_r = collect( ms[r] for (r,s) in c_states_prune )
         c_m_s = collect( ms[s] for (r,s) in c_states_prune )
         Δc_m = collect( c_m_r[j] - c_m_s[j] for j in eachindex(c_m_r))
-    
-        # ## prune resonance components that have a low intensity.
-        # Δc_m, inds_amp, c_states_prune = getΔcm(
-        #     sp;
-        #     intensity_tol = relative_α_threshold*maximum(sp.intensities),
-        # )
-
-        # αs_i_prune = copy(sp.intensities)
-        # Ωs_i_prune = copy(sp.frequencies)
-        # if !isempty(inds_amp)
-        #     αs_i_prune = sp.intensities[inds_amp]
-        #     Ωs_i_prune = sp.frequencies[inds_amp]
-        # end
-
+        
         ## reduce the cardinality of Δc_m if there is magnetic equivalence in this spin system.
+        cs_Δc[i] = copy(cs_sys[i])
         if !isempty(ME)
             if !isempty(ME[i])
-                Δc_m = reduceΔc(Δc_m, ME[i], N_spins_sys[i])
+                Δc_m, cs_Δc[i] = reduceΔc(
+                    Δc_m,
+                    ME[i],
+                    N_spins_sys[i],
+                    cs_sys[i],
+                )
             end
         end
 
@@ -122,7 +117,7 @@ function partitionresonances(
         part_inds_set[i] = P2
     end
 
-    return as, Fs, part_inds_set, Δc_set, Δc_bar, c_states
+    return as, Fs, part_inds_set, Δc_set, Δc_bar, cs_Δc, c_states
 end
 
 # check for neligible intensities, duplicates in coherence order differences, and prune enough components to get approximately the target intensity_err.

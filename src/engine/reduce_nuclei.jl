@@ -100,9 +100,12 @@ end
 # c2 = NMRSpectraSimulator.reduceΔc(A.Δc[1], ME[1], A.N_spins_sys[1])
 
 # """
-function reduceΔc(Δc_m::Vector{Vector{T}},
+function reduceΔc(
+    Δc_m::Vector{Vector{T}},
     ME_m::Vector{Vector{Int}},
-    N_spins::Int) where T
+    N_spins::Integer,
+    cs::Vector{T},
+    ) where T
 
     if isempty(ME_m)
         return Δc_m
@@ -111,16 +114,22 @@ function reduceΔc(Δc_m::Vector{Vector{T}},
     # prepare.
     ordering, DOF = createorderingfromeqinds(ME_m, N_spins)
 
+    cs_reduced = Vector{T}(undef, DOF)
+    for i in eachindex(ordering)
+        k = ordering[i]
+        cs_reduced[k] = cs[i]
+    end
+    
     # condense.
-    c = Vector{Vector{T}}(undef, length(Δc_m))
+    dc = Vector{Vector{T}}(undef, length(Δc_m))
     for l = 1:length(Δc_m) # over existing groups in Δc.
 
-        for k = 1:length(ME_m)
-            c[l] = condensenuclei(Δc_m[l], ordering, DOF)
-        end
+        #for k = 1:length(ME_m)
+            dc[l] = condensenuclei(Δc_m[l], ordering, DOF)
+        #end
     end
 
-    return c
+    return dc, cs_reduced
 end
 
 
