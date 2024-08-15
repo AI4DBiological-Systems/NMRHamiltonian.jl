@@ -85,21 +85,10 @@ function partitionresonances(
             end
         end
 
-        # remove components.
-        #@show length(αs), αs
         αs, Ωs, Δc = processcomponents(αs, Ωs, Δc_m, relative_α_threshold)
-        #@show length(αs), αs
-
-        # @show Δc_m
-        # @show Δc
-        # println()
-
-        # rescale  before clustering.
-        #Δc_m_rescaled = scalebydim(Δc_m)
 
         P = getpartition(Δc, max_dev, acceptance_factor)
 
-        #Δc_centroids = assemblecentroids(MaxAmplitudeCentroids(), part_inds, Δc_m, αs_i_prune)
         P2, as[i], Fs[i], Δc_set[i], Δc_bar[i] = postprocesscomponents(
             P, αs, Ωs, Δc;
             total_α_threshold = total_α_threshold,

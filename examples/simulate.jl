@@ -49,4 +49,6 @@ println("Timing: HAM.loadandsimulate")
     unique_cs_digits = unique_cs_digits,
 );
 
+rcs = collect(HAM.get_rcs(A) for A in As)
+
 nothing

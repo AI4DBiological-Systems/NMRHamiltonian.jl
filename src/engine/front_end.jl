@@ -57,11 +57,12 @@ function simulate(
     # simulate.
     for n in eachindex(Phys)
 
+        # create quantities based on non-singlets.
         αs, Ωs, parts, Δc, Δc_bar, N_spins_sys, cs_Δc,
         αs_singlets, Ωs_singlets, N_spins_singlet, 
         MSPs[n] = setupmoleculeSH(Phys[n], ppm2hzfunc, configs[n])
 
-        # update with singlets.
+        # incorporate info from singlets.
         setupsingletspinsystem!(
             αs,
             Ωs,
@@ -69,6 +70,9 @@ function simulate(
             parts,
             Δc_bar,
             N_spins_sys, # this and the above mutates.
+
+            Phys[n].cs_singlets,
+            cs_Δc,
 
             # here, N_spins_singlet gets appended to N_spins_sys, as with αs_singlets to αs, etc.
             αs_singlets,
@@ -138,15 +142,14 @@ function setupmoleculeSH(
         config,
     )
     
-    αs, Ωs, parts,
-    Δc, Δc_bar, cs_Δc, c_states = partitionresonances(
+    αs, Ωs, parts, Δc, Δc_bar, cs_Δc, _ = partitionresonances(
         MSP.spin_systems,
         N_spins_sys,
         config,
         phy.ME,
         cs_sys,
     )
-    
+
     return αs, Ωs, parts, Δc, Δc_bar, N_spins_sys, cs_Δc,
     MSP.singlet_intensities, MSP.singlet_frequencies, N_spins_singlet, MSP
 end

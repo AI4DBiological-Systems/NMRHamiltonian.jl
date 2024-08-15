@@ -8,6 +8,9 @@ function setupsingletspinsystem!(
     Δc_bar::Vector{Vector{Vector{T}}},
     N_spins_sys::Vector{Int}, # this and the above mutates.
     
+    cs_singlets::Vector{T},
+    cs_Δc::Vector{Vector{T}},
+
     #η::Vector{Vector{Vector{T}}},
     αs_singlets::Vector{T},
     Ωs_singlets::Vector{T},
@@ -25,7 +28,7 @@ function setupsingletspinsystem!(
 
     push!(N_spins_sys, N_spins_singlet...)
 
-    for i in eachindex(αs_singlets)
+    for i in eachindex(αs_singlets, cs_singlets)
         
         ### constant params.
         
@@ -47,6 +50,8 @@ function setupsingletspinsystem!(
         push!(Δc, singlet_Δc)
         push!(Δc_bar, singlet_Δc) # since only one resonance component, set Δc_bar to Δc.
         push!(parts, singlet_part_inds)
+
+        push!(cs_Δc, [cs_singlets[i];])
     end
 
     return nothing
